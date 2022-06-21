@@ -1,14 +1,15 @@
 import json
 import logging
+import time
 
 import pandas as pd
 import requests
 
 from translate import translate
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-inputJson = '/Users/sunchiatso/Library/Application Support/JetBrains/PyCharm2022.1/scratches/scratch.json'
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 spToEngDict = json.load(open('assets/assets.json', 'r', encoding='utf-8'))
+iso3166MapDict = json.load(open('assets/iso3166-1.json', 'r', encoding='utf-8'))
 
 
 def getRawData(rawData: dict) -> list:
@@ -48,14 +49,14 @@ def search(country: str, prov: str, geocodingCsvPath: str):
     for index, row in df.iterrows():
         if (str(row['Country']) in country) or (country in str(row['Country'])):
             tmp = row['lat'], row['lng']
-            if prov == '' and country == 'China':
+            if prov == '' and (country == 'China' or country == 'CN'):
                 return None
             if (str(row['Province']) in prov) or (prov in str(row['Province'])):
                 return row['lat'], row['lng']
     for index, row in df.iterrows():
         if (str(row['Province']) in prov) or (prov in str(row['Province'])):
             return row['lat'], row['lng']
-    logging.info('{} {} not match'.format(country, prov))
+    logging.info('{} {} not match,return {}'.format(country, prov, tmp))
     return tmp
 
 
@@ -80,7 +81,13 @@ def geocodingSingle(session: requests.session, addrList: list) -> list:
     :param session:
     :return: list[lat:float, lng:float], 经纬度
     """
-    country = toEnglish(session, addrList[0])
+    if len(addrList[0]) == 2:
+        if addrList[0] in iso3166MapDict:
+            country = iso3166MapDict[addrList[0]]
+        else:
+            country = toEnglish(session, addrList[0])
+    else:
+        country = toEnglish(session, addrList[0])
     logging.debug('country: {}'.format(country))
     prov = toEnglish(session, addrList[1])
     logging.debug('prov: {}'.format(prov))
@@ -124,5 +131,8 @@ def geoInterface(rawData: dict) -> list:
 
 
 if __name__ == '__main__':
+    t0 = time.time()
     res0 = geoInterface(json.load(open("tmp.json")))
+    t1 = time.time()
+    print(f"costTime:{t1 - t0}")
     print(res0)
