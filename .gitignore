@@ -1,7 +1,6 @@
 /html/
 __pycache__
 .idea
-tmp.json
 .DS_Store
 .vscode
-test.py
+/test/

@@ -137,11 +137,3 @@ def geoInterface(rawData: dict) -> list:
     if not coordinatesList:
         logging.warning('没有搜索到任何数据\nrawData:\n{}'.format(rawData))
     return coordinatesList
-
-
-if __name__ == '__main__':
-    t0 = time.time()
-    res0 = geoInterface(json.load(open("tmp.json")))
-    t1 = time.time()
-    print(f"costTime:{t1 - t0}")
-    print(res0)
