@@ -36,7 +36,20 @@ def getRawData(rawData: dict) -> list:
     return geoRawDataList
 
 
-def search(country: str, prov: str, geocodingCsvPath: str):
+# TODO 改为多线程
+def toEnglish(text: str) -> str:
+    """
+    转换为英文
+    :param text: str, 要转换的文本
+    :return: str, 英文
+    """
+    if text in spToEngDict:
+        return spToEngDict[text]
+    else:
+        return translate(session, text, "en", "auto")
+
+
+def search(country: str, prov: str, geocodingCsvPath: str = 'assets/geocoding2.csv'):
     """
     根据国家和省份查询经纬度 by English
     :param country: str, 国家
@@ -44,6 +57,8 @@ def search(country: str, prov: str, geocodingCsvPath: str):
     :param geocodingCsvPath: str, 经纬度文件路径
     :return: tuple(lat:float, lng:float, msg:str)
     """
+    country=toEnglish(country)
+    prov=toEnglish(prov)
     df = pd.read_csv(geocodingCsvPath, delimiter=",")
     tmp = None
     for index, row in df.iterrows():
@@ -60,49 +75,36 @@ def search(country: str, prov: str, geocodingCsvPath: str):
     return tmp
 
 
-# TODO 改为多线程
-def toEnglish(text: str) -> str:
-    """
-    转换为英文
-    :param text: str, 要转换的文本
-    :return: str, 英文
-    """
-    if text in spToEngDict:
-        return spToEngDict[text]
-    else:
-        return translate(session, text, "en", "auto")
-
-
-def geocodingSingle(addrList: list) -> list:
+def geocodingSingle(addrList: list):
     """
     单个地址转经纬度
     :param addrList: list, 地址信息，格式为[国家, 省份]
-    :return: list[lat:float, lng:float], 经纬度
+    :return: list[lat:float, lng:str, msg:float], 经纬度
     """
     if len(addrList[0].encode()) == 2:
         if addrList[0] in iso3166MapDict:
             country = iso3166MapDict[addrList[0]]
         else:
-            country = toEnglish(addrList[0])
+            country = addrList[0]
     else:
-        country = toEnglish(addrList[0])
+        country = addrList[0]
     logging.debug('country: {}'.format(country))
-    prov = toEnglish(addrList[1])
+    prov = addrList[1]
     logging.debug('prov: {}'.format(prov))
-    coordinateTuple = search(country, prov, 'assets/geocoding2.csv')
-    if coordinateTuple:
+    coordinateTuple = search(country, prov)
+    if len(coordinateTuple)==3:
         logging.debug(f"coordinateTuple: {[coordinateTuple[0], coordinateTuple[1], coordinateTuple[2]]}")
         return [coordinateTuple[0], coordinateTuple[1], coordinateTuple[2]]
     else:
         if not ((country == 'China') and (prov == '')):
             logging.info('{}, {} not found'.format(country, prov))
-        return []
+        return None
 
 
 def geocoding(geoRawDataList: list) -> list:
     """
     多个地址转经纬度
-    :param geoRawDataList: list, 地址集:[['Country0']['Prov0'],['Country1']['Prov1'],...]
+    :param geoRawDataList: list, 地址集:[['Country0','Prov0'],['Country1','Prov1'],...]
     :return: list, 经纬度:[[lat0:float, lng0:float, msg0:str],[lat1:float, lng1:float, msg1:str],...]
     """
     coordinatesList = []
