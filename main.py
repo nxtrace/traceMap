@@ -5,12 +5,12 @@ import folium
 
 from geo import geoInterface
 
-localQuery = False
+localQuery = True
 
 
 def draw(locationsRawList, output_path, file_name):
     """
-    绘制gps轨迹图
+    绘制traceMap
     :param locationsRawList: list, 需要绘制轨迹的经纬度信息，格式为[[lat0, lon0, msg0], [lat1, lon1, msg1], ...] (纬度,经度,信息)
     :param output_path: str, 轨迹图保存路径
     :param file_name: str, 轨迹图保存文件名

@@ -1,14 +1,16 @@
 import json
 import logging
+from multiprocessing.dummy import Pool as ThreadPool
 
 import requests
-from multiprocessing.dummy import Pool as ThreadPool
+from requests.adapters import HTTPAdapter
 
 import geo
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 iso3166MapDict = json.load(open('assets/iso3166-1.json', 'r', encoding='utf-8'))
 session = requests.session()
+session.mount('https://', HTTPAdapter(max_retries=2))
 
 
 def search(country: str, prov: str):
@@ -26,7 +28,7 @@ def search(country: str, prov: str):
         if prov == 'Taiwan':
             return 23.9739374, 120.9820179, "Taiwan Province,China"
     try:
-        r = session.get(f'https://nominatim.openstreetmap.org/search/{addr}?limit=1&format=json')
+        r = session.get(f'https://nominatim.openstreetmap.org/search/{addr}?limit=1&format=json', timeout=3)
         r = r.json()[0]
     except IndexError:
         logging.info('{} {} not found by osmApi'.format(country, prov))

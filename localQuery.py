@@ -3,17 +3,18 @@ import logging
 
 import pandas as pd
 import requests
+from requests.adapters import HTTPAdapter
 
-import translate
 import geo
+import translate
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 spToEngDict = json.load(open('assets/assets.json', 'r', encoding='utf-8'))
 iso3166MapDict = json.load(open('assets/iso3166-1.json', 'r', encoding='utf-8'))
 session = requests.session()
+session.mount('https://', HTTPAdapter(max_retries=2))
 
 
-# TODO 改为多线程
 def toEnglish(text: str) -> str:
     """
     转换为英文

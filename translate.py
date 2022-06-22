@@ -1,9 +1,8 @@
+import html
 import re
 from urllib import parse
 
 import requests
-
-import html
 
 GOOGLE_TRANSLATE_URL = 'https://translate.google.cn/m?q=%s&tl=%s&sl=%s'
 
@@ -16,7 +15,7 @@ def translate(session: requests.session, text: str, to_language, text_language) 
     """
     text = parse.quote(text)
     url = GOOGLE_TRANSLATE_URL % (text, to_language, text_language)
-    response = session.get(url)
+    response = session.get(url, timeout=3)
     data = response.text
     expr = r'(?s)class="(?:t0|result-container)">(.*?)<'
     result = re.findall(expr, data)
