@@ -1,16 +1,16 @@
 import json
 import logging
 
-import pandas as pd
 import requests
 from requests.adapters import HTTPAdapter
 
 import geo
 import translate
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 spToEngDict = json.load(open('assets/assets.json', 'r', encoding='utf-8'))
 iso3166MapDict = json.load(open('assets/iso3166-1.json', 'r', encoding='utf-8'))
+geoDict = json.load(open('assets/geocoding.json', 'r', encoding='utf-8'))
 session = requests.session()
 session.mount('https://', HTTPAdapter(max_retries=2))
 
@@ -27,30 +27,43 @@ def toEnglish(text: str) -> str:
         return translate.translate(session, text, "en", "auto")
 
 
-def search(country: str, prov: str, geocodingCsvPath: str = 'assets/geocoding2.csv'):
+def search_cmp(country=None, prov=None):
+    if prov in geoDict[country]:
+        return geoDict[country][prov][0], geoDict[country][prov][1]
+    else:
+        tmp = None
+        for j in geoDict[country]:
+            tmp = geoDict[country][j][0], geoDict[country][j][1]
+            if j in prov or prov in j:
+                break
+        return tmp
+
+
+def search(countryRaw: str, provRaw: str):
     """
     根据国家和省份查询经纬度 by English
-    :param country: str, 国家
-    :param prov: str, 省份
-    :param geocodingCsvPath: str, 经纬度文件路径
+    :param countryRaw: str, 国家
+    :param provRaw: str, 省份
     :return: tuple(lat:float, lng:float, msg:str)
     """
-    country = toEnglish(country)
-    prov = toEnglish(prov)
-    df = pd.read_csv(geocodingCsvPath, delimiter=",")
+    country = toEnglish(countryRaw)
+    prov = toEnglish(provRaw)
     tmp = None
-    for index, row in df.iterrows():
-        if (str(row['Country']) in country) or (country in str(row['Country'])):
-            tmp = row['lat'], row['lng'], prov + ',' + country
-            if prov == '' and (country == 'China' or country == 'CN'):
-                return None
-            if (str(row['Province']) in prov) or (prov in str(row['Province'])):
-                return row['lat'], row['lng'], prov + ',' + country
-    for index, row in df.iterrows():
-        if (str(row['Province']) in prov) or (prov in str(row['Province'])):
-            return row['lat'], row['lng'], prov + ',' + country
-    logging.info('{} {} not match,return {}'.format(country, prov, tmp))
-    return tmp
+    if country in geoDict:
+        _ = search_cmp(country, prov)
+        return _[0], _[1], provRaw + ',' + countryRaw
+    else:
+        for i in geoDict:
+            if country in i or i in country:
+                _ = search_cmp(i, prov)
+                return _[0], _[1], provRaw + ',' + countryRaw
+        for i in geoDict:
+            for j in geoDict[i]:
+                if j in prov or prov in j:
+                    tmp = geoDict[i][j][0], geoDict[i][j][1], provRaw + ',' + countryRaw
+                    return tmp
+        logging.warning(f'{countryRaw},{provRaw} not found')
+        return tmp
 
 
 def geocoding(geoRawDataList: list) -> list:
@@ -62,6 +75,6 @@ def geocoding(geoRawDataList: list) -> list:
     coordinatesList = []
     for i in geoRawDataList:
         coordinateList = geo.geocodingSingle(i, localQuery=True)
-        if len(coordinateList):
+        if coordinateList and len(coordinateList):
             coordinatesList.append(coordinateList)
     return coordinatesList
