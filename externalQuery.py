@@ -4,6 +4,8 @@ import logging
 import requests
 from multiprocessing.dummy import Pool as ThreadPool
 
+import geo
+
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 iso3166MapDict = json.load(open('assets/iso3166-1.json', 'r', encoding='utf-8'))
 session = requests.session()
@@ -48,3 +50,7 @@ def geocoding(geoRawDataList: list) -> list:
         if i and len(i) == 3:
             coordinatesList.append([i[0], i[1], i[2]])
     return coordinatesList
+
+
+def geocodingSingle(geoRawDataList: list):
+    return geo.geocodingSingle(geoRawDataList, localQuery=False)

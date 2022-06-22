@@ -60,7 +60,7 @@ def geocoding(geoRawDataList: list) -> list:
     """
     coordinatesList = []
     for i in geoRawDataList:
-        coordinateList = geo.geocodingSingle(i, True)
+        coordinateList = geo.geocodingSingle(i, localQuery=True)
         if len(coordinateList):
             coordinatesList.append(coordinateList)
     return coordinatesList
