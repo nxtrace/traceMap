@@ -43,18 +43,3 @@ def process(rawData) -> str:
     filename = str(int(datetime.datetime.now().timestamp())) + '.html'
     draw(coordinatesList, './html', filename)
     return filename
-
-
-if __name__ == '__main__':
-    # a = os.popen("nexttrace -j w153.gubo.org")
-    # a.read()
-    # process(a)
-
-
-    draw(locationsList=
-         [[39.54005292, 115.789976], [39.54005292, 115.789976], [31.21645245, 121.4365047], [31.21645245, 121.4365047], [31.21645245, 121.4365047], [51.30000694, 9.500029662], [51.30000694, 9.500029662], [51.30000694, 9.500029662], [48.86669293, 2.333335326], [48.86669293, 2.333335326], [48.86669293, 2.333335326], [48.86669293, 2.333335326], [48.86669293, 2.333335326]]
-
-         ,
-         output_path='./html',
-         file_name='test.html'
-         )
