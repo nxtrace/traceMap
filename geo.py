@@ -1,9 +1,8 @@
 import json
 import logging
-import time
 
-import threadpool
 import requests
+import threadpool
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 iso3166MapDict = json.load(open('assets/iso3166-1.json', 'r', encoding='utf-8'))
@@ -40,7 +39,7 @@ def search(country: str, prov: str):
     根据国家和省份查询经纬度 by English
     :param country: str, 国家
     :param prov: str, 省份
-    :return: tuple(lat:str, lng:str)
+    :return: tuple(lat:str, lng:str, msg:str)
     """
     addr = prov + ',' + country
     logging.debug(f'addr:{addr}')
@@ -48,21 +47,21 @@ def search(country: str, prov: str):
         if prov == '':
             return None
         if prov == 'Taiwan':
-            return "23.9739374", "120.9820179"
+            return "23.9739374", "120.9820179", "Taiwan Province,China"
     try:
         r = session.get(f'https://nominatim.openstreetmap.org/search/{addr}?limit=1&format=json')
         r = r.json()[0]
     except IndexError:
         logging.info('{} {} not found by osmApi'.format(country, prov))
         return None
-    return r['lat'], r['lon']
+    return r['lat'], r['lon'], addr
 
 
 def geocodingSingle(addrList: list) -> list:
     """
     单个地址转经纬度
     :param addrList: list, 地址信息，格式为[国家, 省份]
-    :return: list[lat:str, lng:str], 经纬度
+    :return: list[lat:str, lng:str, msg:str], 经纬度
     """
     if len(addrList[0].encode()) == 2:
         if addrList[0] in iso3166MapDict:
@@ -76,7 +75,8 @@ def geocodingSingle(addrList: list) -> list:
     logging.debug('prov: {}'.format(prov))
     coordinateTuple = search(country, prov)
     if coordinateTuple:
-        return [coordinateTuple[0], coordinateTuple[1]]
+        logging.debug(f"coordinateTuple: {[coordinateTuple[0], coordinateTuple[1], coordinateTuple[2]]}")
+        return [coordinateTuple[0], coordinateTuple[1], coordinateTuple[2]]
     else:
         if not ((country == 'China') and (prov == '')):
             logging.info('{}, {} not found'.format(country, prov))
@@ -93,21 +93,22 @@ def threadRun(geoRawData: list):
 
 def save_callback(request, result):
     """
-    回调函数
+    回调函数 输出结果: [lat:float, lng:float, msg:str] 插入到cb.append \n
     :param request: 可以访问request.requestID
     :param result: tasks执行完的结果
     """
+    output = ""
     if result:
-        result = [float(result[0]), float(result[1])]
-        cb.append((request.requestID, result))
-    logging.debug(f"request.requestID, result = {request.requestID}, {result}")
+        output = [float(result[0]), float(result[1]), str(result[2])]
+        cb.append((request.requestID, output))
+    logging.debug(f"request.requestID, result = {request.requestID}, {output}")
 
 
 def geocoding(geoRawDataList: list) -> list:
     """
     多个地址转经纬度
     :param geoRawDataList: list, 地址集:[['Country0','Prov0'],['Country1','Prov1'],...]
-    :return: list, 经纬度:[[lat0:float, lng0:float],[lat1:float, lng1:float],...]
+    :return: list, 经纬度:[[lat0:float, lng0:float, msg0:str],[lat1:float, lng1:float, msg1:str],...]
     """
     coordinatesList = []
     pool = threadpool.ThreadPool(8)
@@ -129,7 +130,7 @@ def geoInterface(rawData: dict) -> list:
     """
     地址转经纬度接口
     :param rawData: dict, 原始数据
-    :return: list, 经纬度:[[lat0:float, lng0:float],[lat1:float, lng1:float],...]
+    :return: list, 经纬度:[[lat0:float, lng0:float, msg0:str],[lat1:float, lng1:float, msg1:str],...]
     """
     geoRawDataList = getRawData(rawData)
     logging.debug('geoRawDataList: {}'.format(geoRawDataList))
