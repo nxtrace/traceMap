@@ -42,24 +42,25 @@ def search(country: str, prov: str, geocodingCsvPath: str):
     :param country: str, 国家
     :param prov: str, 省份
     :param geocodingCsvPath: str, 经纬度文件路径
-    :return: tuple(lat:float, lng:float)
+    :return: tuple(lat:float, lng:float, msg:str)
     """
     df = pd.read_csv(geocodingCsvPath, delimiter=",")
     tmp = None
     for index, row in df.iterrows():
         if (str(row['Country']) in country) or (country in str(row['Country'])):
-            tmp = row['lat'], row['lng']
+            tmp = row['lat'], row['lng'], prov + ',' + country
             if prov == '' and (country == 'China' or country == 'CN'):
                 return None
             if (str(row['Province']) in prov) or (prov in str(row['Province'])):
-                return row['lat'], row['lng']
+                return row['lat'], row['lng'], prov + ',' + country
     for index, row in df.iterrows():
         if (str(row['Province']) in prov) or (prov in str(row['Province'])):
-            return row['lat'], row['lng']
+            return row['lat'], row['lng'], prov + ',' + country
     logging.info('{} {} not match,return {}'.format(country, prov, tmp))
     return tmp
 
 
+# TODO 改为多线程
 def toEnglish(session: requests.session, text: str) -> str:
     """
     转换为英文
@@ -93,7 +94,7 @@ def geocodingSingle(session: requests.session, addrList: list) -> list:
     logging.debug('prov: {}'.format(prov))
     coordinateTuple = search(country, prov, 'assets/geocoding2.csv')
     if coordinateTuple:
-        return [coordinateTuple[0], coordinateTuple[1]]
+        return [coordinateTuple[0], coordinateTuple[1], coordinateTuple[2]]
     else:
         if not ((country == 'China') and (prov == '')):
             logging.info('{}, {} not found'.format(country, prov))
@@ -105,7 +106,7 @@ def geocoding(geoRawDataList: list, session: requests.session) -> list:
     多个地址转经纬度
     :param geoRawDataList: list, 地址集:[['Country0']['Prov0'],['Country1']['Prov1'],...]
     :param session:
-    :return: list, 经纬度:[[lat0:float, lng0:float],[lat1:float, lng1:float],...]
+    :return: list, 经纬度:[[lat0:float, lng0:float, msg0:str],[lat1:float, lng1:float, msg1:str],...]
     """
     coordinatesList = []
     for i in geoRawDataList:
@@ -119,7 +120,7 @@ def geoInterface(rawData: dict) -> list:
     """
     地址转经纬度接口
     :param rawData: dict, 原始数据
-    :return: list, 经纬度:[[lat0:float, lng0:float],[lat1:float, lng1:float],...]
+    :return: list, 经纬度:[[lat0:float, lng0:float, msg0:str],[lat1:float, lng1:float, msg1:str],...]
     """
     session = requests.session()
     geoRawDataList = getRawData(rawData)
