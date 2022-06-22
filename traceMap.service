@@ -1,0 +1,13 @@
+[Unit]
+Description=Gunicorn instance to serve traceMap
+After=network.target
+
+[Service]
+User=root
+Group=www-data
+WorkingDirectory=/var/www/traceMap
+Environment="PATH=/var/www/traceMap"
+ExecStart=/usr/local/bin/gunicorn --workers 3 -b 0.0.0.0:8888 webServer:app
+
+[Install]
+WantedBy=multi-user.target

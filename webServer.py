@@ -20,7 +20,7 @@ def api():
         filename = process(data)
     except:
         return "", 500
-    return urlPrefix + filename, 200
+    return request.host_url + 'html/' + filename, 200
 
 
 @app.route('/html/<filename>', methods=['get'])
