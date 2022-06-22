@@ -4,7 +4,6 @@ import logging
 import requests
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-spToEngDict = json.load(open('assets/assets.json', 'r', encoding='utf-8'))
 iso3166MapDict = json.load(open('assets/iso3166-1.json', 'r', encoding='utf-8'))
 session = requests.session()
 
