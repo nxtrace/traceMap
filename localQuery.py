@@ -13,6 +13,7 @@ iso3166MapDict = json.load(open('assets/iso3166-1.json', 'r', encoding='utf-8'))
 geoDict = json.load(open('assets/geocoding.json', 'r', encoding='utf-8'))
 session = requests.session()
 session.mount('https://', HTTPAdapter(max_retries=2))
+combineQuery = True
 
 
 def toEnglish(text: str) -> str:
@@ -57,11 +58,15 @@ def search(countryRaw: str, provRaw: str):
             if country in i or i in country:
                 _ = search_cmp(i, prov)
                 return _[0], _[1], provRaw + ',' + countryRaw
-        for i in geoDict:
-            for j in geoDict[i]:
-                if j in prov or prov in j:
-                    tmp = geoDict[i][j][0], geoDict[i][j][1], provRaw + ',' + countryRaw
-                    return tmp
+        if combineQuery:
+            from externalQuery import search as search_external
+            return search_external(countryRaw, provRaw)
+        else:
+            for i in geoDict:
+                for j in geoDict[i]:
+                    if j in prov or prov in j:
+                        tmp = geoDict[i][j][0], geoDict[i][j][1], provRaw + ',' + countryRaw
+                        return tmp
         logging.warning(f'{countryRaw},{provRaw} not found')
         return tmp
 
