@@ -41,13 +41,16 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
         print('locationsList is []')
 
 
-def process(rawData: str) -> str:
+def process(rawData) -> str:
     """
     处理原始数据，获取HTML文件路径
-    :param rawData: str, 原始数据
+    :param rawData: str or dict, 原始数据
     :return: str, HTML文件路径
     """
-    coordinatesList = geoInterface(json.loads(rawData), localQuery=localQuery)
+    if type(rawData) == dict:
+        coordinatesList = geoInterface(rawData, localQuery=localQuery)
+    else:
+        coordinatesList = geoInterface(json.loads(rawData), localQuery=localQuery)
     filename = str(int(datetime.datetime.now().timestamp())) + '.html'
     draw(coordinatesList, './html', filename)
     return filename
