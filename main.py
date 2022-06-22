@@ -1,4 +1,5 @@
 import datetime
+import json
 import os
 
 import folium
@@ -8,13 +9,12 @@ from geo import geoInterface
 localQuery = True
 
 
-def draw(locationsRawList, output_path, file_name):
+def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
     """
     绘制traceMap
     :param locationsRawList: list, 需要绘制轨迹的经纬度信息，格式为[[lat0, lon0, msg0], [lat1, lon1, msg1], ...] (纬度,经度,信息)
     :param output_path: str, 轨迹图保存路径
     :param file_name: str, 轨迹图保存文件名
-    :return: None
     """
     locationsList = [[i[0], i[1]] for i in locationsRawList]
     msgList = [i[2] for i in locationsRawList]
@@ -41,13 +41,13 @@ def draw(locationsRawList, output_path, file_name):
         print('locationsList is []')
 
 
-def process(rawData) -> str:
+def process(rawData: str) -> str:
     """
     处理原始数据，获取HTML文件路径
-    :param rawData: dict, 原始数据
+    :param rawData: str, 原始数据
     :return: str, HTML文件路径
     """
-    coordinatesList = geoInterface(rawData, localQuery=localQuery)
+    coordinatesList = geoInterface(json.loads(rawData), localQuery=localQuery)
     filename = str(int(datetime.datetime.now().timestamp())) + '.html'
     draw(coordinatesList, './html', filename)
     return filename
