@@ -16,7 +16,7 @@ def getRawData(rawData: dict) -> list:
     """
     获取原始数据
     :param rawData: dict, 原始数据
-    :return: [['Country0']['Prov0'],['Country1']['Prov1'],...]
+    :return: [['Country0','Prov0'],['Country1','Prov1'],...]
     """
     logging.debug('rawData: {}'.format(rawData))
     hopsList = rawData['Hops']
@@ -66,7 +66,6 @@ def toEnglish(session: requests.session, text: str) -> str:
     转换为英文
     :param session:
     :param text: str, 要转换的文本
-    :param target: str, 目标语言
     :return: str, 英文
     """
     if text in spToEngDict:
