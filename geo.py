@@ -2,12 +2,11 @@ import json
 import logging
 
 import requests
-import threadpool
+from multiprocessing.dummy import Pool as ThreadPool
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 iso3166MapDict = json.load(open('assets/iso3166-1.json', 'r', encoding='utf-8'))
 session = requests.session()
-cb = []
 
 
 def getRawData(rawData: dict) -> list:
@@ -83,27 +82,6 @@ def geocodingSingle(addrList: list) -> list:
         return []
 
 
-def threadRun(geoRawData: list):
-    """
-    :param geoRawData: list, 地址集:['Country','Prov']
-    """
-    coordinateList = geocodingSingle(geoRawData)
-    return coordinateList
-
-
-def save_callback(request, result):
-    """
-    回调函数 输出结果: [lat:float, lng:float, msg:str] 插入到cb.append \n
-    :param request: 可以访问request.requestID
-    :param result: tasks执行完的结果
-    """
-    output = ""
-    if result:
-        output = [float(result[0]), float(result[1]), str(result[2])]
-        cb.append((request.requestID, output))
-    logging.debug(f"request.requestID, result = {request.requestID}, {output}")
-
-
 def geocoding(geoRawDataList: list) -> list:
     """
     多个地址转经纬度
@@ -111,18 +89,14 @@ def geocoding(geoRawDataList: list) -> list:
     :return: list, 经纬度:[[lat0:float, lng0:float, msg0:str],[lat1:float, lng1:float, msg1:str],...]
     """
     coordinatesList = []
-    pool = threadpool.ThreadPool(8)
-    tasks = threadpool.makeRequests(threadRun, geoRawDataList, save_callback)
-    [pool.putRequest(task) for task in tasks]
-    pool.wait()
-    cb.sort(key=lambda x: x[0])
-    logging.debug(f"callbackResult = {cb}")
-    for i in cb:
-        try:
-            if i[1][0]:
-                coordinatesList.append(i[1])
-        except (TypeError, IndexError):
-            continue
+    pool = ThreadPool(4)
+    sum_result = pool.map(geocodingSingle, geoRawDataList)
+    pool.close()
+    pool.join()
+    print(sum_result)
+    for i in sum_result:
+        if len(i) == 3:
+            coordinatesList.append([float(i[0]), float(i[1]), str(i[2])])
     return coordinatesList
 
 
