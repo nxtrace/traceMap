@@ -38,7 +38,7 @@ def search(country: str, prov: str):
     根据国家和省份查询经纬度 by English
     :param country: str, 国家
     :param prov: str, 省份
-    :return: tuple(lat:str, lng:str, msg:str)
+    :return: tuple(lat:float, lng:float, msg:str)
     """
     addr = prov + ',' + country
     logging.debug(f'addr:{addr}')
@@ -46,21 +46,21 @@ def search(country: str, prov: str):
         if prov == '':
             return None
         if prov == 'Taiwan':
-            return "23.9739374", "120.9820179", "Taiwan Province,China"
+            return 23.9739374, 120.9820179, "Taiwan Province,China"
     try:
         r = session.get(f'https://nominatim.openstreetmap.org/search/{addr}?limit=1&format=json')
         r = r.json()[0]
     except IndexError:
         logging.info('{} {} not found by osmApi'.format(country, prov))
         return None
-    return r['lat'], r['lon'], addr
+    return float(r['lat']), float(r['lon']), addr
 
 
-def geocodingSingle(addrList: list) -> list:
+def geocodingSingle(addrList: list):
     """
     单个地址转经纬度
     :param addrList: list, 地址信息，格式为[国家, 省份]
-    :return: list[lat:str, lng:str, msg:str], 经纬度
+    :return: list[lat:float, lng:str, msg:float], 经纬度
     """
     if len(addrList[0].encode()) == 2:
         if addrList[0] in iso3166MapDict:
@@ -73,13 +73,13 @@ def geocodingSingle(addrList: list) -> list:
     prov = addrList[1]
     logging.debug('prov: {}'.format(prov))
     coordinateTuple = search(country, prov)
-    if coordinateTuple:
+    if len(coordinateTuple)==3:
         logging.debug(f"coordinateTuple: {[coordinateTuple[0], coordinateTuple[1], coordinateTuple[2]]}")
         return [coordinateTuple[0], coordinateTuple[1], coordinateTuple[2]]
     else:
         if not ((country == 'China') and (prov == '')):
             logging.info('{}, {} not found'.format(country, prov))
-        return []
+        return None
 
 
 def geocoding(geoRawDataList: list) -> list:
@@ -95,8 +95,8 @@ def geocoding(geoRawDataList: list) -> list:
     pool.join()
     print(sum_result)
     for i in sum_result:
-        if len(i) == 3:
-            coordinatesList.append([float(i[0]), float(i[1]), str(i[2])])
+        if i and len(i) == 3:
+            coordinatesList.append([i[0], i[1], i[2]])
     return coordinatesList
 
 
