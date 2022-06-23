@@ -11,5 +11,7 @@ from requests.adapters import HTTPAdapter
 
 import html
 
-_ = str(json) + str(logging) + str(ThreadPool()) + str(datetime) + str(os) + str(html) + str(re) + str(parse) + str(
-    requests) + str(HTTPAdapter)
+if __name__ == '__main__':
+    _ = str(json) + str(logging) + str(ThreadPool()) + str(datetime) + str(os) + str(html) + str(re) + str(parse) + str(
+        requests) + str(HTTPAdapter)
+    print(_)
