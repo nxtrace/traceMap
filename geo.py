@@ -3,16 +3,32 @@ import logging
 
 import requests
 
-logging.basicConfig(level=logging.WARN, format='%(asctime)s - %(levelname)s - %(message)s')
 iso3166MapDict = json.load(open('assets/iso3166-1.json', 'r', encoding='utf-8'))
 session = requests.session()
+
+
+def listToStr(rawList: list) -> str:
+    """
+    列表转字符串
+    :param rawList: list, 列表
+    :return: str, 字符串
+    """
+    resStr = ''
+    for i in rawList:
+        if i is not str:
+            i = str(i)
+        if i:
+            if resStr:
+                resStr += ','
+            resStr += i
+    return resStr
 
 
 def getRawData(rawData: dict) -> list:
     """
     获取原始数据
     :param rawData: dict, 原始数据
-    :return: [['Country0','Prov0'],['Country1','Prov1'],...]
+    :return: [['Country0','Prov0','extraMsg0'],['Country1','Prov1','extraMsg1'],...]
     """
     logging.debug('rawData: {}'.format(rawData))
     hopsList = rawData['Hops']
@@ -27,7 +43,20 @@ def getRawData(rawData: dict) -> list:
                 break
             if time['Success']:
                 if time['Geo']['Country']:
-                    geoRawDataList.append([time['Geo']['Country'], time['Geo']['Prov']])
+                    geoRawDataList.append([
+                        time['Geo']['Country'],
+                        time['Geo']['Prov'],
+                        listToStr([
+                            time['Geo']['City'],
+                            time['Geo']['District'],
+                            'IP:' + time['Address']['IP'],
+                            ('asn:' + time['Geo']['Asnumber']) if time['Geo']['Asnumber'] else '',
+                            'TTL:' + str(time['TTL']),
+                            f"RTT:{time['RTT'] / 10e5:.1f}ms",
+                            ('Owner:' + time['Geo']['Owner']) if time['Geo']['Owner'] else '',
+                            ('ISP:' + time['Geo']['Isp']) if time['Geo']['Isp'] else '',
+                        ])
+                    ])
                 break
     return geoRawDataList
 
@@ -36,7 +65,7 @@ def geocodingSingle(addrList: list, localQuery: bool):
     """
     单个地址转经纬度
     :param localQuery: bool, 是否使用本地数据
-    :param addrList: list, 地址信息，格式为[国家, 省份]
+    :param addrList: list, 地址信息，格式为[国家, 省份, 额外信息]
     :return: list[lat:float, lng:str, msg:float], 经纬度
     """
     if len(addrList[0].encode()) == 2:
@@ -49,14 +78,16 @@ def geocodingSingle(addrList: list, localQuery: bool):
     logging.debug('country: {}'.format(country))
     prov = addrList[1]
     logging.debug('prov: {}'.format(prov))
+    extraMsg = addrList[2]
     if localQuery:
         from localQuery import search
     else:
         from externalQuery import search
     coordinateTuple = search(country, prov)
     if coordinateTuple and len(coordinateTuple) == 3:
-        logging.debug(f"coordinateTuple: {[coordinateTuple[0], coordinateTuple[1], coordinateTuple[2]]}")
-        return [coordinateTuple[0], coordinateTuple[1], coordinateTuple[2]]
+        tmpMsg = coordinateTuple[2] + ',' + extraMsg
+        logging.debug(f"coordinateTuple: {[coordinateTuple[0], coordinateTuple[1], tmpMsg]}")
+        return [coordinateTuple[0], coordinateTuple[1], tmpMsg]
     else:
         if not ((country == 'China') and (prov == '')):
             logging.info('{}, {} not found'.format(country, prov))
@@ -79,4 +110,5 @@ def geoInterface(rawData: dict, localQuery: bool) -> list:
     coordinatesList = geocoding(geoRawDataList)
     if not coordinatesList:
         logging.warning('没有搜索到任何数据\nrawData:\n{}'.format(rawData))
+    logging.debug('coordinatesList: {}'.format(coordinatesList))
     return coordinatesList

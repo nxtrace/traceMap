@@ -4,7 +4,7 @@ from urllib import parse
 
 import requests
 
-GOOGLE_TRANSLATE_URL = 'https://translate.google.cn/m?q=%s&tl=%s&sl=%s'
+GOOGLE_TRANSLATE_URL = 'https://translate.google.com/m?q=%s&tl=%s&sl=%s'
 
 
 def translate(session: requests.session, text: str, to_language, text_language) -> str:

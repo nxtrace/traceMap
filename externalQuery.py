@@ -7,7 +7,6 @@ from requests.adapters import HTTPAdapter
 
 import geo
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 iso3166MapDict = json.load(open('assets/iso3166-1.json', 'r', encoding='utf-8'))
 session = requests.session()
 session.mount('https://', HTTPAdapter(max_retries=2))
@@ -20,13 +19,13 @@ def search(country: str, prov: str):
     :param prov: str, 省份
     :return: tuple(lat:float, lng:float, msg:str)
     """
-    addr = prov + ',' + country
+    addr = country + ',' + prov
     logging.debug(f'addr:{addr}')
     if (country == 'China') or (country == '中国'):
         if prov == '':
             return None
         if prov == 'Taiwan':
-            return 23.9739374, 120.9820179, "Taiwan Province,China"
+            return 23.9739374, 120.9820179, "China, Taiwan Province"
     try:
         r = session.get(f'https://nominatim.openstreetmap.org/search/{addr}?limit=1&format=json', timeout=3)
         r = r.json()[0]
@@ -39,7 +38,7 @@ def search(country: str, prov: str):
 def geocoding(geoRawDataList: list) -> list:
     """
     多个地址转经纬度
-    :param geoRawDataList: list, 地址集:[['Country0','Prov0'],['Country1','Prov1'],...]
+    :param geoRawDataList: list, 地址集:[['Country0','Prov0','extraMsg0'],['Country1','Prov1','extraMsg1'],...]
     :return: list, 经纬度:[[lat0:float, lng0:float, msg0:str],[lat1:float, lng1:float, msg1:str],...]
     """
     coordinatesList = []

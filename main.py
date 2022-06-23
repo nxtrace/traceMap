@@ -34,7 +34,7 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
 
         # 其他点
         for i in range(1, len(locationsList) - 1):
-            folium.Marker(locationsList[i], popup=f'<b>Point {i}, {msgList[i]}</b>').add_to(m)
+            folium.Marker(locationsList[i], popup=f'<b>{msgList[i]}</b>').add_to(m)
 
         m.save(os.path.join(output_path, file_name))  # 将结果以HTML形式保存到指定路径
     else:

@@ -7,7 +7,6 @@ from requests.adapters import HTTPAdapter
 import geo
 import translate
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 spToEngDict = json.load(open('assets/assets.json', 'r', encoding='utf-8'))
 iso3166MapDict = json.load(open('assets/iso3166-1.json', 'r', encoding='utf-8'))
 geoDict = json.load(open('assets/geocoding.json', 'r', encoding='utf-8'))
@@ -47,17 +46,18 @@ def search(countryRaw: str, provRaw: str):
     :param provRaw: str, 省份
     :return: tuple(lat:float, lng:float, msg:str)
     """
+    addrRaw = countryRaw + ',' + provRaw
     country = toEnglish(countryRaw)
     prov = toEnglish(provRaw)
     tmp = None
     if country in geoDict:
         _ = search_cmp(country, prov)
-        return _[0], _[1], provRaw + ',' + countryRaw
+        return _[0], _[1], addrRaw
     else:
         for i in geoDict:
             if country in i or i in country:
                 _ = search_cmp(i, prov)
-                return _[0], _[1], provRaw + ',' + countryRaw
+                return _[0], _[1], addrRaw
         if combineQuery:
             from externalQuery import search as search_external
             return search_external(countryRaw, provRaw)
@@ -65,16 +65,16 @@ def search(countryRaw: str, provRaw: str):
             for i in geoDict:
                 for j in geoDict[i]:
                     if j in prov or prov in j:
-                        tmp = geoDict[i][j][0], geoDict[i][j][1], provRaw + ',' + countryRaw
+                        tmp = geoDict[i][j][0], geoDict[i][j][1], addrRaw
                         return tmp
-        logging.warning(f'{countryRaw},{provRaw} not found')
+        logging.warning(f'{addrRaw} not found')
         return tmp
 
 
 def geocoding(geoRawDataList: list) -> list:
     """
     多个地址转经纬度
-    :param geoRawDataList: list, 地址集:[['Country0','Prov0'],['Country1','Prov1'],...]
+    :param geoRawDataList: list, 地址集:[['Country0','Prov0','extraMsg0'],['Country1','Prov1','extraMsg1'],...]
     :return: list, 经纬度:[[lat0:float, lng0:float, msg0:str],[lat1:float, lng1:float, msg1:str],...]
     """
     coordinatesList = []
