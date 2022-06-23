@@ -54,7 +54,7 @@ def geocodingSingle(addrList: list, localQuery: bool):
     else:
         from externalQuery import search
     coordinateTuple = search(country, prov)
-    if len(coordinateTuple)==3:
+    if coordinateTuple and len(coordinateTuple) == 3:
         logging.debug(f"coordinateTuple: {[coordinateTuple[0], coordinateTuple[1], coordinateTuple[2]]}")
         return [coordinateTuple[0], coordinateTuple[1], coordinateTuple[2]]
     else:
