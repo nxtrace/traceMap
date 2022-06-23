@@ -5,9 +5,11 @@ After=network.target
 [Service]
 User=root
 Group=www-data
+StandardOutput=append:/var/log/traceMap_access.log
+StandardError=append:/var/log/traceMap_error.log
 WorkingDirectory=/var/www/traceMap
 Environment="PATH=/var/www/traceMap"
-ExecStart=/usr/local/bin/gunicorn --workers 3 -b 0.0.0.0:8888 webServer:app
+ExecStart=/usr/local/bin/gunicorn --workers 3 -b 0.0.0.0:18888 webServer:app
 
 [Install]
 WantedBy=multi-user.target

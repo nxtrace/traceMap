@@ -1,4 +1,5 @@
-/html/
+/html/[0-9]*.html
+!/html/demo.html
 __pycache__
 .idea
 .DS_Store
