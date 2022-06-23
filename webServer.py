@@ -1,6 +1,7 @@
 import flask
 from flask import request
 
+from __init__ import *
 from main import process
 
 logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')

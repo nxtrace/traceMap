@@ -1,4 +1,5 @@
 import geo
+from __init__ import *
 
 iso3166MapDict = json.load(open('assets/iso3166-1.json', 'r', encoding='utf-8'))
 session = requests.session()

@@ -1,3 +1,5 @@
+from __init__ import *
+
 GOOGLE_TRANSLATE_URL = 'https://translate.google.com/m?q=%s&tl=%s&sl=%s'
 session = requests.session()
 session.mount('https://', HTTPAdapter(max_retries=2))

@@ -1,5 +1,6 @@
 import folium
 
+from __init__ import *
 from geo import geoInterface
 
 localQuery = True
