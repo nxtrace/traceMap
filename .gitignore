@@ -5,3 +5,4 @@ __pycache__
 .DS_Store
 .vscode
 /test/
+/log/[0-9]*.json

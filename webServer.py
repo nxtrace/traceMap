@@ -1,3 +1,5 @@
+import datetime
+import json
 import logging
 
 import flask
@@ -16,6 +18,7 @@ urlPrefix = "http://localhost:8888/html/"
 @app.route('/api', methods=['post'])
 def api():
     data = request.get_json()
+    json.dump(obj=data, fp=open('log/' + str(int(datetime.datetime.now().timestamp())) + '.json', 'w'))
     try:
         filename = process(data)
     except:
