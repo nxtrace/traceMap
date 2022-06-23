@@ -4,6 +4,11 @@ from __init__ import *
 from geo import geoInterface
 
 localQuery = True
+tiles = "http://webrd02.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}"
+
+
+# 根据相关法律法规，此处选择高德地图，海外用户可选择下面注释掉的OpenStreetMap
+# tiles = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
 
 
 def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
@@ -16,7 +21,7 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
     locationsList = [[i[0], i[1]] for i in locationsRawList]
     msgList = [i[2] for i in locationsRawList]
     if locationsList:
-        m = folium.Map(locationsList[int(len(locationsList) / 2)], attr='default', zoom_start=4)  # 中心区域的确定
+        m = folium.Map(locationsList[int(len(locationsList) / 2)], attr='default', zoom_start=4, tiles=tiles)  # 中心区域的确定
 
         folium.PolyLine(  # polyline方法为将坐标用实线形式连接起来
             locationsList,  # 将坐标点连接起来
@@ -27,9 +32,9 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
 
         # 起始点，结束点
         folium.Marker(locationsList[0], popup=f'<b>Starting Point, {msgList[0]}</b>',
-                      icon=folium.Icon(color='green', prefix='fa', icon='paw')).add_to(m)
+                      icon=folium.Icon(color='green', prefix='fa', icon='info-sign')).add_to(m)
         folium.Marker(locationsList[-1], popup=f'<b>End Point, {msgList[-1]}</b>',
-                      icon=folium.Icon(color='red', prefix='fa', icon='paw')).add_to(m)
+                      icon=folium.Icon(color='red', prefix='fa', icon='info-sign')).add_to(m)
 
         # 其他点
         for i in range(1, len(locationsList) - 1):
