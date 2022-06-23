@@ -1,10 +1,6 @@
-import json
-import logging
-
-import requests
+import translate
 
 iso3166MapDict = json.load(open('assets/iso3166-1.json', 'r', encoding='utf-8'))
-session = requests.session()
 
 
 def listToStr(rawList: list) -> str:
@@ -24,9 +20,10 @@ def listToStr(rawList: list) -> str:
     return resStr
 
 
-def getRawData(rawData: dict) -> list:
+def getRawData(rawData: dict, localQuery: bool) -> list:
     """
     获取原始数据
+    :param localQuery: bool, 是否为本地查询
     :param rawData: dict, 原始数据
     :return: [['Country0','Prov0','extraMsg0'],['Country1','Prov1','extraMsg1'],...]
     """
@@ -58,13 +55,16 @@ def getRawData(rawData: dict) -> list:
                         ])
                     ])
                 break
+    if localQuery:
+        geoRawDataList = translate.dictTranslate(geoRawDataList)
+    logging.debug('geoRawDataList: {}'.format(geoRawDataList))
     return geoRawDataList
 
 
 def geocodingSingle(addrList: list, localQuery: bool):
     """
     单个地址转经纬度
-    :param localQuery: bool, 是否使用本地数据
+    :param localQuery: bool, 是否为本地查询
     :param addrList: list, 地址信息，格式为[国家, 省份, 额外信息]
     :return: list[lat:float, lng:str, msg:float], 经纬度
     """
@@ -97,12 +97,11 @@ def geocodingSingle(addrList: list, localQuery: bool):
 def geoInterface(rawData: dict, localQuery: bool) -> list:
     """
     地址转经纬度接口
-    :param localQuery: bool, 是否使用本地数据
+    :param localQuery: bool, 是否为本地查询
     :param rawData: dict, 原始数据
     :return: list, 经纬度:[[lat0:float, lng0:float, msg0:str],[lat1:float, lng1:float, msg1:str],...]
     """
-    geoRawDataList = getRawData(rawData)
-    logging.debug('geoRawDataList: {}'.format(geoRawDataList))
+    geoRawDataList = getRawData(rawData, localQuery)
     if localQuery:
         from localQuery import geocoding
     else:

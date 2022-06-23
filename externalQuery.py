@@ -1,10 +1,3 @@
-import json
-import logging
-from multiprocessing.dummy import Pool as ThreadPool
-
-import requests
-from requests.adapters import HTTPAdapter
-
 import geo
 
 iso3166MapDict = json.load(open('assets/iso3166-1.json', 'r', encoding='utf-8'))
@@ -46,7 +39,7 @@ def geocoding(geoRawDataList: list) -> list:
     sum_result = pool.map(geocodingSingle, geoRawDataList)
     pool.close()
     pool.join()
-    print(sum_result)
+    logging.info(f"geocoding_osm_sum_result:{sum_result}")
     for i in sum_result:
         if i and len(i) == 3:
             coordinatesList.append([i[0], i[1], i[2]])

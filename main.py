@@ -1,7 +1,3 @@
-import datetime
-import json
-import os
-
 import folium
 
 from geo import geoInterface
@@ -38,7 +34,7 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
 
         m.save(os.path.join(output_path, file_name))  # 将结果以HTML形式保存到指定路径
     else:
-        print('locationsList is []')
+        logging.info('locationsList is []')
 
 
 def process(rawData) -> str:
