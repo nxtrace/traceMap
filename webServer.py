@@ -31,5 +31,10 @@ def html(filename):
     return flask.send_from_directory('html', filename)
 
 
+@app.route('/favicon.ico', methods=['get'])
+def favicon():
+    return flask.send_file('favicon.ico', mimetype='image/vnd.microsoft.icon')
+
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=8888, debug=False)
