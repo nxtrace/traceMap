@@ -12,7 +12,7 @@ def listToStr(rawList: list) -> str:
     """
     resStr = ''
     for i in rawList:
-        if i is not str:
+        if type(i) is not str:
             i = str(i)
         if i:
             if resStr:

@@ -1,7 +1,6 @@
 import geo
 from __init__ import *
 
-spToEngDict = json.load(open('assets/assets.json', 'r', encoding='utf-8'))
 iso3166MapDict = json.load(open('assets/iso3166-1.json', 'r', encoding='utf-8'))
 geoDict = json.load(open('assets/geocoding.json', 'r', encoding='utf-8'))
 combineQuery = True

@@ -26,12 +26,15 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
         ).add_to(m)  # 将这条线添加到刚才的区域m内
 
         # 起始点，结束点
-        folium.Marker(locationsList[0], popup=f'<b>Starting Point, {msgList[0]}</b>').add_to(m)
-        folium.Marker(locationsList[-1], popup=f'<b>End Point, {msgList[-1]}</b>').add_to(m)
+        folium.Marker(locationsList[0], popup=f'<b>Starting Point, {msgList[0]}</b>',
+                      icon=folium.Icon(color='green', prefix='fa', icon='paw')).add_to(m)
+        folium.Marker(locationsList[-1], popup=f'<b>End Point, {msgList[-1]}</b>',
+                      icon=folium.Icon(color='red', prefix='fa', icon='paw')).add_to(m)
 
         # 其他点
         for i in range(1, len(locationsList) - 1):
-            folium.Marker(locationsList[i], popup=f'<b>{msgList[i]}</b>').add_to(m)
+            if not (locationsList[i] == locationsList[0] or locationsList[i] == locationsList[-1]):
+                folium.Marker(locationsList[i], popup=f'<b>{msgList[i]}</b>').add_to(m)
 
         m.save(os.path.join(output_path, file_name))  # 将结果以HTML形式保存到指定路径
     else:
