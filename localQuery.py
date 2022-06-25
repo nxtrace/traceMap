@@ -1,21 +1,41 @@
 import geo
 from __init__ import *
+from externalQuery import search as search_external
 
 iso3166MapDict = json.load(open('assets/iso3166-1.json', 'r', encoding='utf-8'))
 geoDict = json.load(open('assets/geocoding.json', 'r', encoding='utf-8'))
 combineQuery = True
+spCountryList = ["Russia", "Canada", "China", "United States of America", "Brazil", "Australia", "India", "Argentina",
+                 "Japan", "Vietnam", "Kazakhstan"]
 
 
 def search_cmp(country=None, prov=None):
+    if country in spCountryList and prov == "":
+        return
+    # DEBUG
+    # _ = search_external(country, prov)
+    # print(f"OSM: country:{country} prov:{prov} res:{_}")
     if prov in geoDict[country]:
-        return geoDict[country][prov][0], geoDict[country][prov][1]
+        logging.debug(f"{prov} in geoDict[{country}]")
+        res = (geoDict[country][prov][0], geoDict[country][prov][1]), True
     else:
+        isFind = False
         tmp = None
         for j in geoDict[country]:
-            tmp = geoDict[country][j][0], geoDict[country][j][1]
+            tmp = (geoDict[country][j][0], geoDict[country][j][1])
             if j in prov or prov in j:
+                logging.debug(f"{prov} in geoDict[{country}][{j}] tmp:{tmp}")
+                isFind = True
                 break
-        return tmp
+        logging.debug(f"{prov} NOT FIND in geoDict[{country}] tmp:{tmp}") if isFind else None
+        res = tmp, isFind
+    logging.debug(f"country:{country} prov:{prov} res:{res}")
+    if res[1]:
+        return res[0]
+    elif country in spCountryList:
+        return search_external(country, prov)
+    else:
+        return res[0]
 
 
 def search(country: str, prov: str):
@@ -30,14 +50,19 @@ def search(country: str, prov: str):
     tmp = None
     if country in geoDict:
         _ = search_cmp(country, prov)
-        return _[0], _[1], addr
+        if _:
+            return _[0], _[1], addr
+        else:
+            return
     else:
         for i in geoDict:
             if country in i or i in country:
                 _ = search_cmp(i, prov)
-                return _[0], _[1], addr
+                if _:
+                    return _[0], _[1], addr
+                else:
+                    return
         if combineQuery:
-            from externalQuery import search as search_external
             return search_external(country, prov)
         else:
             for i in geoDict:
