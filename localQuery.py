@@ -18,6 +18,9 @@ def search_cmp(country=None, prov=None):
     if prov in geoDict[country]:
         logging.debug(f"{prov} in geoDict[{country}]")
         res = (geoDict[country][prov][0], geoDict[country][prov][1]), True
+    elif prov.split(' ')[0] in geoDict[country]:
+        logging.debug(f"(prov.split(' ')[0] = {prov.split(' ')[0]}) in geoDict[{country}]")
+        res = (geoDict[country][prov.split(' ')[0]][0], geoDict[country][prov.split(' ')[0]][1]), True
     else:
         isFind = False
         tmp = None
