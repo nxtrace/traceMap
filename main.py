@@ -4,11 +4,6 @@ from __init__ import *
 from geo import geoInterface
 
 localQuery = True
-tiles = "http://webrd02.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}"
-
-
-# 根据相关法律法规，此处选择高德地图，海外用户可选择下面注释掉的OpenStreetMap
-# tiles = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
 
 
 def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
@@ -20,6 +15,14 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
     """
     locationsList = [[i[0], i[1]] for i in locationsRawList]
     msgList = [i[2] for i in locationsRawList]
+    if (msgList[0].split(',')[0] == 'China' or msgList[0].split(',')[0] == '中国') \
+            and not ('香港' in msgList[0].split(',')[1] or 'Hong Kong' in msgList[0].split(',')[1]) \
+            and not ('台湾' in msgList[0].split(',')[1] or 'Taiwan' in msgList[0].split(',')[1]) \
+            and not ('澳门' in msgList[0].split(',')[1] or 'Macao' in msgList[0].split(',')[1]):
+        # 根据相关法律法规，中国用户自动选择高德地图
+        tiles = "http://webrd02.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}"
+    else:
+        tiles = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
     if locationsList:
         m = folium.Map(locationsList[int(len(locationsList) / 2)], attr='default', zoom_start=4, tiles=tiles)  # 中心区域的确定
 
