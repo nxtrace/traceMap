@@ -46,9 +46,10 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
         logging.info('locationsList is []')
 
 
-def process(rawData) -> str:
+def process(rawData: Union[dict, str], filename=str(int(datetime.datetime.now().timestamp())) + '.html') -> str:
     """
     处理原始数据，获取HTML文件路径
+    :param filename: 导出的文件名，默认时间戳
     :param rawData: str or dict, 原始数据
     :return: str, HTML文件路径
     """
@@ -56,6 +57,6 @@ def process(rawData) -> str:
         coordinatesList = geoInterface(rawData, localQuery=localQuery)
     else:
         coordinatesList = geoInterface(json.loads(rawData), localQuery=localQuery)
-    filename = str(int(datetime.datetime.now().timestamp())) + '.html'
+
     draw(coordinatesList, './html', filename)
     return filename

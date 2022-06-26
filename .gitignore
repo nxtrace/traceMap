@@ -1,8 +1,8 @@
-/html/[0-9]*.html
+/html/*.html
 !/html/demo.html
 __pycache__
 .idea
 .DS_Store
 .vscode
 /test/
-/log/[0-9]*.json
+/log/*.json

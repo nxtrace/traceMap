@@ -1,3 +1,5 @@
+import uuid
+
 import flask
 from flask import request
 
@@ -15,9 +17,13 @@ urlPrefix = "http://localhost:8888/html/"
 @app.route('/api', methods=['post'])
 def api():
     data = request.get_json()
-    json.dump(obj=data, fp=open('log/' + str(int(datetime.datetime.now().timestamp())) + '.json', 'w'))
+    uName = str(uuid.uuid5(uuid.NAMESPACE_DNS, request.get_data().decode()))
+    json.dump(obj=data,
+              fp=open('log/' + uName + '.json', 'w'),
+              ensure_ascii=False
+              )
     try:
-        filename = process(data)
+        filename = process(data, filename=uName + '.html')
     except:
         return "", 500
     return request.host_url + 'html/' + filename, 200
@@ -34,4 +40,4 @@ def favicon():
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=8888, debug=False)
+    app.run(host="0.0.0.0", port=18888, debug=False)
