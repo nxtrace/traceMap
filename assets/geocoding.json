@@ -324,13 +324,13 @@
     ]
   },
   "American Samoa": {
-    "NaN": [
+    "American Samoa": [
       -14.2766105,
       -170.7066451
     ]
   },
   "Andorra": {
-    "NaN": [
+    "Andorra": [
       42.50000144,
       1.516485961
     ]
@@ -410,13 +410,13 @@
     ]
   },
   "Antarctica": {
-    "NaN": [
+    "Antarctica": [
       -69.03039249,
       39.7460831
     ]
   },
   "Antigua and Barbuda": {
-    "NaN": [
+    "Antigua and Barbuda": [
       17.11803652,
       -61.85003382
     ]
@@ -550,7 +550,7 @@
     ]
   },
   "Aruba": {
-    "NaN": [
+    "Aruba": [
       12.53038373,
       -70.02899195
     ]
@@ -694,7 +694,7 @@
     ]
   },
   "Bahrain": {
-    "NaN": [
+    "Bahrain": [
       26.23613629,
       50.58305172
     ]
@@ -860,7 +860,7 @@
     ]
   },
   "Bermuda": {
-    "NaN": [
+    "Bermuda": [
       32.29419029,
       -64.78393742
     ]
@@ -1522,13 +1522,13 @@
     ]
   },
   "Cape Verde": {
-    "NaN": [
+    "Cape Verde": [
       14.91669802,
       -23.51668889
     ]
   },
   "Cayman Islands": {
-    "NaN": [
+    "Cayman Islands": [
       19.28043683,
       -81.32998173
     ]
@@ -1988,7 +1988,7 @@
     ]
   },
   "Comoros": {
-    "NaN": [
+    "Comoros": [
       -11.7041577,
       43.2402441
     ]
@@ -2082,7 +2082,7 @@
     ]
   },
   "Cook Islands": {
-    "NaN": [
+    "Cook Islands": [
       -21.25003497,
       -159.7500013
     ]
@@ -2222,7 +2222,7 @@
     ]
   },
   "Curacao": {
-    "NaN": [
+    "Curacao": [
       12.20042971,
       -69.01998377
     ]
@@ -2808,7 +2808,7 @@
     ]
   },
   "Falkland Islands": {
-    "NaN": [
+    "Falkland Islands": [
       -51.70001097,
       -57.8499679
     ]
@@ -2820,7 +2820,7 @@
     ]
   },
   "Federated States of Micronesia": {
-    "NaN": [
+    "Federated States of Micronesia": [
       6.916643696,
       158.1499743
     ]
@@ -2992,7 +2992,7 @@
     ]
   },
   "French Polynesia": {
-    "NaN": [
+    "French Polynesia": [
       -17.53336261,
       -149.5666694
     ]
@@ -3256,13 +3256,13 @@
     ]
   },
   "Grenada": {
-    "NaN": [
+    "Grenada": [
       12.0526334,
       -61.74164323
     ]
   },
   "Guam": {
-    "NaN": [
+    "Guam": [
       13.4700163,
       144.750017
     ]
@@ -3572,7 +3572,7 @@
     ]
   },
   "Hong Kong S.A.R.": {
-    "NaN": [
+    "Hong Kong S.A.R.": [
       22.3049809,
       114.1850093
     ]
@@ -4208,7 +4208,7 @@
     ]
   },
   "Isle of Man": {
-    "NaN": [
+    "Isle of Man": [
       54.15042727,
       -4.480021404
     ]
@@ -4766,7 +4766,7 @@
     ]
   },
   "Kiribati": {
-    "NaN": [
+    "Kiribati": [
       1.338187506,
       173.0175708
     ]
@@ -5098,7 +5098,7 @@
     ]
   },
   "Liechtenstein": {
-    "NaN": [
+    "Liechtenstein": [
       47.13372377,
       9.516669473
     ]
@@ -5140,7 +5140,7 @@
     ]
   },
   "Macau S.A.R": {
-    "NaN": [
+    "Macau S.A.R": [
       22.20299746,
       113.5450484
     ]
@@ -5310,7 +5310,7 @@
     ]
   },
   "Maldives": {
-    "NaN": [
+    "Maldives": [
       4.16670819,
       73.49994747
     ]
@@ -5350,13 +5350,13 @@
     ]
   },
   "Malta": {
-    "NaN": [
+    "Malta": [
       35.89973248,
       14.51471065
     ]
   },
   "Marshall Islands": {
-    "NaN": [
+    "Marshall Islands": [
       7.103004311,
       171.3800002
     ]
@@ -5412,7 +5412,7 @@
     ]
   },
   "Mauritius": {
-    "NaN": [
+    "Mauritius": [
       -20.16663857,
       57.49999385
     ]
@@ -5570,7 +5570,7 @@
     ]
   },
   "Monaco": {
-    "NaN": [
+    "Monaco": [
       43.73964569,
       7.406913173
     ]
@@ -6328,13 +6328,13 @@
     ]
   },
   "Northern Cyprus": {
-    "NaN": [
+    "Northern Cyprus": [
       35.12502525,
       33.95001013
     ]
   },
   "Northern Mariana Islands": {
-    "NaN": [
+    "Northern Mariana Islands": [
       15.21125368,
       145.7505761
     ]
@@ -6478,13 +6478,13 @@
     ]
   },
   "Palau": {
-    "NaN": [
+    "Palau": [
       7.487396173,
       134.6265485
     ]
   },
   "Palestine": {
-    "NaN": [
+    "Palestine": [
       31.52999921,
       34.44501868
     ]
@@ -7052,7 +7052,7 @@
     ]
   },
   "Puerto Rico": {
-    "NaN": [
+    "Puerto Rico": [
       18.44002301,
       -66.12997929
     ]
@@ -7606,37 +7606,37 @@
     ]
   },
   "Saint Kitts and Nevis": {
-    "NaN": [
+    "Saint Kitts and Nevis": [
       17.30203046,
       -62.71700932
     ]
   },
   "Saint Lucia": {
-    "NaN": [
+    "Saint Lucia": [
       14.00197349,
       -61.00000818
     ]
   },
   "Saint Vincent and the Grenadines": {
-    "NaN": [
+    "Saint Vincent and the Grenadines": [
       13.14827883,
       -61.21206242
     ]
   },
   "Samoa": {
-    "NaN": [
+    "Samoa": [
       -13.84154504,
       -171.7386416
     ]
   },
   "San Marino": {
-    "NaN": [
+    "San Marino": [
       43.91715008,
       12.46667029
     ]
   },
   "Sao Tome and Principe": {
-    "NaN": [
+    "Sao Tome and Principe": [
       0.333402119,
       6.733325153
     ]
@@ -7764,7 +7764,7 @@
     ]
   },
   "Seychelles": {
-    "NaN": [
+    "Seychelles": [
       -4.616631654,
       55.44998979
     ]
@@ -7788,7 +7788,7 @@
     ]
   },
   "Singapore": {
-    "NaN": [
+    "Singapore": [
       1.293033466,
       103.8558207
     ]
@@ -7898,7 +7898,7 @@
     ]
   },
   "Somaliland": {
-    "NaN": [
+    "Somaliland": [
       9.560022399,
       44.06531002
     ]
@@ -7942,7 +7942,7 @@
     ]
   },
   "South Georgia and the Islands": {
-    "NaN": [
+    "South Georgia and the Islands": [
       -54.28057697,
       -36.50798893
     ]
@@ -9050,7 +9050,7 @@
     ]
   },
   "The Bahamas": {
-    "NaN": [
+    "The Bahamas": [
       25.08339012,
       -77.35004378
     ]
@@ -9096,7 +9096,7 @@
     ]
   },
   "Tonga": {
-    "NaN": [
+    "Tonga": [
       -21.13851236,
       -175.2205645
     ]
@@ -9506,13 +9506,13 @@
     ]
   },
   "Turks and Caicos Islands": {
-    "NaN": [
+    "Turks and Caicos Islands": [
       21.46642743,
       -71.13597864
     ]
   },
   "Tuvalu": {
-    "NaN": [
+    "Tuvalu": [
       -8.516651999,
       179.2166471
     ]
@@ -10212,7 +10212,7 @@
     ]
   },
   "United States Virgin Islands": {
-    "NaN": [
+    "United States Virgin Islands": [
       17.75037518,
       -64.749986
     ]
@@ -10678,7 +10678,7 @@
     ]
   },
   "Western Sahara": {
-    "NaN": [
+    "Western Sahara": [
       26.11916669,
       -9.652522218
     ]
