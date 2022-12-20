@@ -11,7 +11,6 @@ app = flask.Flask(__name__)
 
 app.config['JSON_AS_ASCII'] = False
 
-urlPrefix = "http://localhost:8888/html/"
 
 
 @app.route('/api', methods=['post'])
@@ -26,7 +25,7 @@ def api():
         filename = process(data, filename=uName + '.html')
     except:
         return "", 500
-    return request.host_url + 'html/' + filename, 200
+    return filename, 200
 
 
 @app.route('/html/<filename>', methods=['get'])
