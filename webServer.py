@@ -16,17 +16,18 @@ urlPrefix = "http://localhost:8888/html/"
 
 @app.route('/api', methods=['post'])
 def api():
-    data = request.get_json()
+    data = json.loads(request.data.decode("utf-8"))
+
     uName = str(uuid.uuid5(uuid.NAMESPACE_DNS, request.get_data().decode()))
-    json.dump(obj=data,
-              fp=open('log/' + uName + '.json', 'w'),
-              ensure_ascii=False
-              )
+    json_str = json.dumps(data, ensure_ascii=False)
+    data = json.loads(json_str)
+    with open('log/' + uName + '.json', 'w', encoding='utf-8') as f:
+        f.write(json_str)
     try:
         filename = process(data, filename=uName + '.html')
     except:
         return "", 500
-    return request.host_url + 'html/' + filename, 200
+    return filename, 200
 
 
 @app.route('/html/<filename>', methods=['get'])
