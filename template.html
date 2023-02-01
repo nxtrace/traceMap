@@ -1,21 +1,23 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no"/>
     <style type="text/css">
-    body, html,#allmap {
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        margin: 0;
-    }
-</style>
-    <script type="text/javascript" src="//api.map.baidu.com/api?type=webgl&v=1.0&ak=GpP2LbK1QIGwk69oWV1QNuZ6pBCieqV6"></script>
-    <title>设置地图3D视角</title>
+        body, html, #allmap {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            margin: 0;
+        }
+    </style>
+    <script type="text/javascript"
+            src="//api.map.baidu.com/api?type=webgl&v=1.0&ak=GpP2LbK1QIGwk69oWV1QNuZ6pBCieqV6"></script>
+    <title>NextTrace traceMap</title>
 </head>
 <body>
-    <div id="allmap"></div>
+<div id="bt"></div>
+<div id="allmap"></div>
 </body>
 </html>
 <script type="text/javascript">
@@ -41,28 +43,28 @@
         });
         map.addOverlay(label);
     }
-    
+
     function AddPathPoint(path, lat, lon) {
         tmp = new BMapGL.Point(lon, lat)
         path.push(tmp)
     }
-    
+
     function AddPoint(map, name, description, lat, lon) {
         var point = new BMapGL.Point(lon, lat);
         var marker = new BMapGL.Marker(point);  // 创建标注
-    	map.addOverlay(marker);              // 将标注添加到地图中
-    	var opts = {
-    	    width : 100,     // 信息窗口宽度
-    	    height: 70,     // 信息窗口高度
-    	    title : name , // 信息窗口标题
-    	    message: description
-    	}
-    	var infoWindow = new BMapGL.InfoWindow(description, opts);  // 创建信息窗口对象 
-    	marker.addEventListener("click", function(){          
-    		map.openInfoWindow(infoWindow, point); //开启信息窗口
-    	}); 
+        map.addOverlay(marker);              // 将标注添加到地图中
+        var opts = {
+            width: 100,     // 信息窗口宽度
+            height: 70,     // 信息窗口高度
+            title: name, // 信息窗口标题
+            message: description
+        }
+        var infoWindow = new BMapGL.InfoWindow(description, opts);  // 创建信息窗口对象
+        marker.addEventListener("click", function () {
+            map.openInfoWindow(infoWindow, point); //开启信息窗口
+        });
     }
-    
+
     var map = new BMapGL.Map("allmap");
     map.enableScrollWheelZoom(true);
     var path = [];
@@ -73,31 +75,77 @@
 
     // Python 写入部分结束
 
-    
+
     // map.centerAndZoom(new BMapGL.Point(-40, 40), 4);
-    
+
     // // 这里添加标签
     // AddLabel(map, "洛杉矶", 34.0522346496582, -118.24368286132812)
     // AddLabel(map, "法兰克福", 50.110923767089844, 8.682126998901367)
-    
+
     // // 这里添加节点
     // AddPathPoint(path, 34.0522346496582, -118.24368286132812)
     // AddPathPoint(path, 50.110923767089844, 8.682126998901367)
-    
+
     // // 这里添加坐标点
     // AddPoint(map, "洛杉矶", "cogentco.com", 34.0522346496582, -118.24368286132812)
     // AddPoint(map, "法兰克福", "cogentco.com", 50.110923767089844, 8.682126998901367)
-    
+
     var polyline = new BMapGL.Polyline(path, {
         clip: false,
         geodesic: true,
         strokeWeight: 3,
-        strokeColor:"purple",
+        strokeColor: "purple",
     });
 
     // map.setMapType(BMAP_EARTH_MAP);
     map.addOverlay(polyline);
-    map.setMapStyleV2({     
-      styleId: 'ddc6d516d02f045825a181edb1adecea'
+    map.setMapStyleV2({
+        styleId: 'ddc6d516d02f045825a181edb1adecea'
     });
+
+    function func_3D() {
+        if (map.getMapType() === BMAP_EARTH_MAP) {
+            map.setMapType(BMAP_NORMAL_MAP)
+            map.enableScrollWheelZoom(true);
+        }
+        else {
+            map.setMapType(BMAP_EARTH_MAP)
+            map.enableScrollWheelZoom(true);
+        }
+    }
+
+    function addMenu(){
+        var menu = new BMapGL.ContextMenu();
+        var txtMenuItem = [
+            {
+                text: '放大一级',
+                callback: function () {
+                    map.zoomIn();
+                }
+            }, {
+                text: '缩小一级',
+                callback: function () {
+                    map.zoomOut();
+                }
+            }, {
+                text: '3D视角',
+                callback: function () {
+                    func_3D();
+                }
+            }
+        ];
+        for (var i = 0; i < txtMenuItem.length; i++) {
+            menu.addItem(new BMapGL.MenuItem(txtMenuItem[i].text, txtMenuItem[i].callback, 100));
+        }
+        map.addContextMenu(menu);
+    }
+
+    if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
+        // 若当前设备是移动设备,不添加菜单而是在id="bt"的div中添加按钮
+        const bt = document.getElementById("bt");
+        bt.innerHTML = "<button onclick='func_3D()'>3D视角</button>";
+    } else {
+        addMenu();
+    }
+
 </script>
