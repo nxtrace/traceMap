@@ -60,14 +60,11 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
             content += 'AddPoint(map, "{}", "{}", {}, {})\n'.format(i[2], text, lat, lng)
             textList = []
 
-    template = ''
     with open('template.html', 'r') as f:
         template = f.read()
-    new_content = template.replace("%_REPLACE_CONTENT_%", ''.join(content))
-    # print(new_content)
-    f = open(os.path.join(output_path, file_name), 'w')
-    f.write(new_content)
-    f.close()
+        new_content = template.replace("%_REPLACE_CONTENT_%", ''.join(content))
+        with open(os.path.join(output_path, file_name), 'w', encoding='utf-8') as fp:
+            fp.write(new_content)
 
 
 def process(rawData: dict, filename=str(int(datetime.datetime.now().timestamp())) + '.html') -> str:
@@ -83,7 +80,7 @@ def process(rawData: dict, filename=str(int(datetime.datetime.now().timestamp())
     for k in rawData['Hops']:
         for j in k:
             if j['Success']:
-                if not 'lat' in j['Geo']:
+                if 'lat' not in j['Geo']:
                     return "不受支持的版本，请更新至最新版本NextTrace。"
                 if j['Geo']['lat'] == 0 and j['Geo']['lng'] == 0:
                     continue

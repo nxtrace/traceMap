@@ -23,10 +23,13 @@ def api():
     data = json.loads(json_str)
     with open('log/' + uName + '.json', 'w', encoding='utf-8') as f:
         f.write(json_str)
+        logging.info("Saved log to log/" + uName + ".json")
     try:
         filename = process(data, filename=uName + '.html')
+        logging.info("Saved html to " + filename)
     except Exception as e:
         logging.error(e)
+        print(traceback.format_exc())
         return "", 500
     return filename, 200
 
@@ -42,4 +45,4 @@ def favicon():
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=18888, debug=False)
+    app.run(host="0.0.0.0", port=18888, debug=True)
