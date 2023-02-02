@@ -25,7 +25,8 @@ def api():
         f.write(json_str)
     try:
         filename = process(data, filename=uName + '.html')
-    except:
+    except Exception as e:
+        logging.error(e)
         return "", 500
     return filename, 200
 
