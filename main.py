@@ -13,28 +13,57 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
     :param file_name: str, 轨迹图保存文件名
     """
     # 计算中心
+    content = []
     location_center_lat = (locationsRawList[0][0] + locationsRawList[-1][0]) / 2
     if abs(locationsRawList[0][1] - locationsRawList[-1][1]) > 180:
         location_center_lng = (locationsRawList[0][1] + locationsRawList[-1][1] + 360) / 2
     else:
         location_center_lng = (locationsRawList[0][1] + locationsRawList[-1][1]) / 2
-    content = 'map.centerAndZoom(new BMapGL.Point({}, {}), 4)\n'.format(location_center_lng, location_center_lat)
-    for i in locationsRawList:
-        lat = i[0] + random.uniform(-0.1, 0.1)
-        lng = i[1] + random.uniform(-0.1, 0.1)
+    content += 'map.centerAndZoom(new BMapGL.Point({}, {}), 4)\n'.format(location_center_lng, location_center_lat)
+
+    isIPv4 = (IPy.IP(locationsRawList[0][5]).version() == 4)
+    if isIPv4:
+        locationsRawList[0][5] = str(IPy.IP(locationsRawList[0][5]).make_net('24'))
+        locationsRawList[-1][5] = str(IPy.IP(locationsRawList[-1][5]).make_net('24'))
+    else:
+        locationsRawList[0][5] = str(IPy.IP(locationsRawList[0][5]).make_net('48'))
+        locationsRawList[-1][5] = str(IPy.IP(locationsRawList[-1][5]).make_net('48'))
+
+    textList = []
+
+    for k, i in enumerate(locationsRawList):
+        lat = i[0]
+        lng = i[1]
         text = i[5] + ' ' \
                + (('AS' + i[4]) if i[4] != '' else '') + ' ' \
                + 'TTL:' + i[7] + ' ' \
                + i[3] + ' ' \
                + 'RTT:' + i[8] + 'ms'  # + i[6]
-        # text = i[3]
-        # content += 'AddLabel(map, "{}", {}, {})\n'.format(i[2], i[0], i[1])
-        content += 'AddPathPoint(path, {}, {})\n'.format(lat, lng)
-        content += 'AddPoint(map, "{}", "{}", {}, {})\n'.format(i[2], text, lat, lng)
+        if k == len(locationsRawList) - 1:
+            textList.append(text)
+            text = '<br>'.join(textList)
+            lat += random.uniform(-0.1, 0.1)
+            lng += random.uniform(-0.1, 0.1)
+            content += 'AddPathPoint(path, {}, {})\n'.format(lat, lng)
+            content += 'AddPoint(map, "{}", "{}", {}, {})\n'.format(i[2], text, lat, lng)
+            textList = []
+            break
+        if lat == locationsRawList[k + 1][0] and lng == locationsRawList[k + 1][1]:
+            textList.append(text)
+            continue
+        else:
+            textList.append(text)
+            text = '<br>'.join(textList)
+            lat += random.uniform(-0.1, 0.1)
+            lng += random.uniform(-0.1, 0.1)
+            content += 'AddPathPoint(path, {}, {})\n'.format(lat, lng)
+            content += 'AddPoint(map, "{}", "{}", {}, {})\n'.format(i[2], text, lat, lng)
+            textList = []
+
     template = ''
-    with open('/var/www/traceMap/template.html', 'r') as f:
+    with open('template.html', 'r') as f:
         template = f.read()
-    new_content = template.replace("%_REPLACE_CONTENT_%", content)
+    new_content = template.replace("%_REPLACE_CONTENT_%", ''.join(content))
     # print(new_content)
     f = open(os.path.join(output_path, file_name), 'w')
     f.write(new_content)
@@ -82,3 +111,8 @@ def process(rawData: dict, filename=str(int(datetime.datetime.now().timestamp())
                 break
     draw(coordinatesList, './html', filename)
     return urlPrefix + filename
+
+
+if __name__ == '__main__':
+    json.load(open('test/test.json', 'r'))
+    print(process(json.load(open('test/test.json', 'r')), filename='demo1.html'))
