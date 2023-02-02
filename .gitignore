@@ -1,8 +1,7 @@
 /html/*.html
-!/html/demo.html
+/log/*.json
+/test/
 __pycache__
 .idea
 .DS_Store
 .vscode
-/test/
-/log/*.json
