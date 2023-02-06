@@ -29,7 +29,7 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
         locationsRawList[0][5] = str(IPy.IP(locationsRawList[0][5]).make_net('48'))
         locationsRawList[-1][5] = str(IPy.IP(locationsRawList[-1][5]).make_net('48'))
 
-    tableDataList = [[i[7], i[5], i[7], i[4], i[2]] for i in locationsRawList]
+    tableDataList = [[i[7], i[5], i[8], i[4], i[2]] for i in locationsRawList]
     textList = []
 
     for k, i in enumerate(locationsRawList):
