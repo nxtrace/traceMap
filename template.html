@@ -4,11 +4,75 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no"/>
     <style type="text/css">
-        body, html, #allmap {
+        body,
+        html,
+        #allmap {
             width: 100%;
             height: 100%;
             overflow: hidden;
             margin: 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        @media screen and (min-width: 500px) {
+            th,
+            td {
+                padding: 8px;
+                text-align: left;
+                border-bottom: 1px rgba(161, 190, 199, 0.705);
+                font-size: 0.5vw;
+            }
+
+            th {
+                background-color: rgba(84, 125, 138, 0.4);
+                font-size: 0.5vw;
+            }
+
+            .table-container {
+                z-index: 1;
+                position: fixed;
+                height: auto;
+                width: auto;
+                transform: translate(0, -50%);
+                top: 50%;
+                background-color: rgba(195, 214, 219, 0.705);
+                backdrop-filter: blur(12px);
+                overflow: auto;
+                border-radius: 10px;
+                border: 2px solid rgba(84, 125, 138, 0.705);
+            }
+        }
+        @media screen and (max-width: 500px) {
+            .table-container {
+                z-index: 1;
+                position: fixed;
+                height: auto;
+                width: auto;
+                max-width: 80%;
+                max-height: 50%;
+                transform: translate(0, -50%);
+                top: 50%;
+                background-color: rgba(195, 214, 219, 0.705);
+                backdrop-filter: blur(12px);
+                overflow: auto;
+                border-radius: 10px;
+                border: 2px solid rgba(84, 125, 138, 0.705);
+            }
+
+            th,
+            td {
+                padding: 8px;
+                text-align: left;
+                border-bottom: 1px rgba(161, 190, 199, 0.705);
+                /*font-size: 16px;*/
+            }
+
+            th {
+                background-color: rgba(84, 125, 138, 0.4);
+                /*font-size: 16px;*/
+            }
         }
     </style>
     <script type="text/javascript"
@@ -16,6 +80,18 @@
     <title>NextTrace traceMap</title>
 </head>
 <body>
+<div class="table-container" id="myTable">
+    <table>
+        <tr>
+            <th>TTL</th>
+            <th>IP</th>
+            <th>RTT</th>
+            <th>ASN</th>
+            <th>Geography</th>
+        </tr>
+        <tbody id="table-body"></tbody>
+    </table>
+</div>
 <div id="bt"></div>
 <div id="allmap"></div>
 </body>
@@ -39,7 +115,7 @@
             height: '30px',
             lineHeight: '30px',
             fontFamily: '微软雅黑',
-            backgroundColor: "rgba(255,255,255,0.3)"
+            backgroundColor: "rgba(255,255,0,0.3)"
         });
         map.addOverlay(label);
     }
@@ -71,7 +147,7 @@
 
     // Python 写入部分开始
 
-    %_REPLACE_CONTENT_%
+    %_REPLACE_CONTENT0_%
 
     // Python 写入部分结束
 
@@ -132,6 +208,11 @@
                 callback: function () {
                     func_3D();
                 }
+            }, {
+                text: '路由表',
+                callback: function () {
+                    hideTable();
+                }
             }
         ];
         for (var i = 0; i < txtMenuItem.length; i++) {
@@ -139,11 +220,37 @@
         }
         map.addContextMenu(menu);
     }
+    function generateTable() {
+        const data = %_REPLACE_CONTENT1_%;
+
+        const tableBody = document.getElementById("table-body");
+        data.forEach(item => {
+            const row = document.createElement("tr");
+            item.forEach(col => {
+                const cell = document.createElement("td");
+                cell.innerHTML = col;
+                row.appendChild(cell);
+            });
+            tableBody.appendChild(row);
+        });
+    }
+    generateTable();
+    function hideTable() {
+        var b = document.getElementById("myTable");
+        if (b.style.display === "none") {
+            b.style.display = "block";
+        } else {
+            b.style.display = "none";
+        }
+    }
+
 
     if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
         // 若当前设备是移动设备,不添加菜单而是在id="bt"的div中添加按钮
         const bt = document.getElementById("bt");
         bt.innerHTML = "<button onclick='func_3D()'>3D视角</button>";
+        bt.innerHTML += "<button onclick='hideTable()'>路由表</button>";
+        hideTable();
     } else {
         addMenu();
     }

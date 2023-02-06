@@ -29,6 +29,7 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
         locationsRawList[0][5] = str(IPy.IP(locationsRawList[0][5]).make_net('48'))
         locationsRawList[-1][5] = str(IPy.IP(locationsRawList[-1][5]).make_net('48'))
 
+    tableDataList = [[i[7], i[5], i[7], i[4], i[2]] for i in locationsRawList]
     textList = []
 
     for k, i in enumerate(locationsRawList):
@@ -42,8 +43,8 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
         if k == len(locationsRawList) - 1:
             textList.append(text)
             text = '<br>'.join(textList)
-            lat += random.uniform(-0.1, 0.1)
-            lng += random.uniform(-0.1, 0.1)
+            lat += random.uniform(-0.01, 0.01)
+            lng += random.uniform(-0.01, 0.01)
             content += 'AddPathPoint(path, {}, {})\n'.format(lat, lng)
             content += 'AddPoint(map, "{}", "{}", {}, {})\n'.format(i[2], text, lat, lng)
             textList = []
@@ -54,15 +55,17 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
         else:
             textList.append(text)
             text = '<br>'.join(textList)
-            lat += random.uniform(-0.1, 0.1)
-            lng += random.uniform(-0.1, 0.1)
+            lat += random.uniform(-0.01, 0.01)
+            lng += random.uniform(-0.01, 0.01)
             content += 'AddPathPoint(path, {}, {})\n'.format(lat, lng)
             content += 'AddPoint(map, "{}", "{}", {}, {})\n'.format(i[2], text, lat, lng)
             textList = []
 
     with open('template.html', 'r') as f:
         template = f.read()
-        new_content = template.replace("%_REPLACE_CONTENT_%", ''.join(content))
+        new_content = (template.replace("%_REPLACE_CONTENT0_%", ''.join(content))).replace(
+            "%_REPLACE_CONTENT1_%",json.dumps(tableDataList,ensure_ascii=False)
+        )
         with open(os.path.join(output_path, file_name), 'w', encoding='utf-8') as fp:
             fp.write(new_content)
 
