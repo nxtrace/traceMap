@@ -28,6 +28,7 @@ def api():
         filename = process(data, filename=uName + '.html')
         logging.info("Saved html to " + filename)
     except Exception as e:
+        logging.error("uuid:", uName)
         logging.error(e)
         print(traceback.format_exc())
         return "", 500
