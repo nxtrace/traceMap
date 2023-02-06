@@ -8,6 +8,7 @@
         html,
         #allmap {
             pointer-events: auto;
+            z-index: 1;
             width: 100%;
             height: 100%;
             overflow: hidden;
@@ -33,7 +34,7 @@
 
             .table-container {
                 pointer-events: auto;
-                z-index: 1;
+                z-index: 2;
                 position: fixed;
                 height: auto;
                 width: auto;
@@ -49,7 +50,7 @@
         @media screen and (max-width: 500px) {
             .table-container {
                 pointer-events: auto;
-                z-index: 1;
+                z-index: 2;
                 position: fixed;
                 height: auto;
                 width: auto;
