@@ -78,9 +78,26 @@
                 /*font-size: 16px;*/
             }
         }
+
+        .qrcode-container {
+            pointer-events: auto;
+            z-index: 2;
+            position: fixed;
+            height: auto;
+            width: auto;
+            transform: translate(0, -50%);
+            top: 50%;
+            left: 50%;
+            background-color: rgba(195, 214, 219, 0.705);
+            backdrop-filter: blur(12px);
+            overflow: auto;
+            border-radius: 10px;
+            border: 2px solid rgba(84, 125, 138, 0.705);
+        }
     </style>
     <script type="text/javascript"
             src="//api.map.baidu.com/api?type=webgl&v=1.0&ak=GpP2LbK1QIGwk69oWV1QNuZ6pBCieqV6"></script>
+    <script type="text/javascript" src="qrcode.js"></script>
     <title>NextTrace traceMap</title>
 </head>
 <body>
@@ -96,6 +113,9 @@
         <tbody id="table-body"></tbody>
     </table>
     <div>Tips:3D视角和路由表格可通过右键菜单切换显示.</div>
+</div>
+<div class="qrcode-container">
+    <div id="qrcode"></div>
 </div>
 <div id="bt"></div>
 <div id="allmap"></div>
@@ -218,6 +238,11 @@
                 callback: function () {
                     hideTable();
                 }
+            }, {
+                text: 'QrCode',
+                callback: function () {
+                    hideQrcode();
+                }
             }
         ];
         for (var i = 0; i < txtMenuItem.length; i++) {
@@ -241,20 +266,34 @@
     }
     generateTable();
     function hideTable() {
-        var b = document.getElementById("myTable");
-        if (b.style.display === "none") {
-            b.style.display = "block";
+        var t = document.getElementById("myTable");
+        if (t.style.display === "none") {
+            t.style.display = "block";
         } else {
-            b.style.display = "none";
+            t.style.display = "none";
         }
     }
+    function generateQrcode() {
+        new QRCode(document.getElementById("qrcode"), window.location.href);
+    }
+    generateQrcode();
+    hideQrcode();
 
+    function hideQrcode() {
+        var q = document.getElementById("qrcode");
+        if (q.style.display === "none") {
+            q.style.display = "block";
+        } else {
+            q.style.display = "none";
+        }
+    }
 
     if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
         // 若当前设备是移动设备,不添加菜单而是在id="bt"的div中添加按钮
         const bt = document.getElementById("bt");
         bt.innerHTML = "<button onclick='func_3D()'>3D视角</button>";
         bt.innerHTML += "<button onclick='hideTable()'>路由表</button>";
+        bt.innerHTML += "<button onclick='hideQrcode()'>QrCode</button>";
         hideTable();
     } else {
         addMenu();
