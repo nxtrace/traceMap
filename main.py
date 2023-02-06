@@ -61,7 +61,7 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
             content += 'AddPoint(map, "{}", "{}", {}, {})\n'.format(i[2], text, lat, lng)
             textList = []
 
-    with open('template.html', 'r', encoding='utf-8') as f:
+    with open('template/template.html', 'r', encoding='utf-8') as f:
         template = f.read()
         new_content = (template.replace("%_REPLACE_CONTENT0_%", ''.join(content))).replace(
             "%_REPLACE_CONTENT1_%",json.dumps(tableDataList,ensure_ascii=False)

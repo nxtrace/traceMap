@@ -1,0 +1,93 @@
+body,
+html,
+#allmap {
+    pointer-events: auto;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    margin: 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+@media screen and (min-width: 500px) {
+    th,
+    td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px rgba(161, 190, 199, 0.705);
+        font-size: 1vw;
+    }
+
+    th {
+        background-color: rgba(84, 125, 138, 0.4);
+        font-size: 1vw;
+    }
+
+    .table-container {
+        pointer-events: auto;
+        z-index: 2;
+        position: fixed;
+        height: auto;
+        width: auto;
+        transform: translate(0, -50%);
+        top: 50%;
+        background-color: rgba(195, 214, 219, 0.705);
+        backdrop-filter: blur(12px);
+        overflow: auto;
+        border-radius: 10px;
+        border: 2px solid rgba(84, 125, 138, 0.705);
+    }
+}
+
+@media screen and (max-width: 500px) {
+    .table-container {
+        pointer-events: auto;
+        z-index: 2;
+        position: fixed;
+        height: auto;
+        width: auto;
+        max-width: 80%;
+        max-height: 50%;
+        transform: translate(0, -50%);
+        top: 50%;
+        background-color: rgba(195, 214, 219, 0.705);
+        backdrop-filter: blur(12px);
+        overflow: auto;
+        border-radius: 10px;
+        border: 2px solid rgba(84, 125, 138, 0.705);
+    }
+
+    th,
+    td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px rgba(161, 190, 199, 0.705);
+        /*font-size: 16px;*/
+    }
+
+    th {
+        background-color: rgba(84, 125, 138, 0.4);
+        /*font-size: 16px;*/
+    }
+}
+
+.qrcode-container {
+    pointer-events: auto;
+    z-index: 2;
+    position: fixed;
+    height: auto;
+    width: auto;
+    transform: translate(0, -50%);
+    top: 50%;
+    left: 50%;
+    background-color: rgba(195, 214, 219, 0.705);
+    backdrop-filter: blur(12px);
+    overflow: auto;
+    border-radius: 10px;
+    border: 2px solid rgba(84, 125, 138, 0.705);
+}
