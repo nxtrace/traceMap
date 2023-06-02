@@ -6,15 +6,15 @@ from flask import request
 from __init__ import *
 from main import process
 
-logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
-app = flask.Flask(__name__)
 
-app.config['JSON_AS_ASCII'] = False
-
-urlPrefix = "http://localhost:8888/html/"
+def html(filename):
+    return flask.send_from_directory('html', filename)
 
 
-@app.route('/api', methods=['post'])
+def favicon():
+    return flask.send_file('favicon.ico', mimetype='image/vnd.microsoft.icon')
+
+
 def api():
     data = json.loads(request.data.decode("utf-8"))
 
@@ -35,15 +35,29 @@ def api():
     return filename, 200
 
 
-@app.route('/html/<filename>', methods=['get'])
-def html(filename):
-    return flask.send_from_directory('html', filename)
+class WebServer:
+    def __init__(self):
+        self.app = flask.Flask(__name__)
+        if 'GUNICORN_CMD_ARGS' in os.environ:
+            gunicorn_logger = logging.getLogger('gunicorn.error')
+            self.app.logger.handlers = gunicorn_logger.handlers
+            self.app.logger.setLevel(gunicorn_logger.level)
+        else:
+            logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
+        self.app.config['JSON_AS_ASCII'] = False
+
+        self.urlPrefix = "http://localhost:8888/html/"
+
+        self.app.route('/api', methods=['post'])(api)
+        self.app.route('/html/<filename>', methods=['get'])(html)
+        self.app.route('/favicon.ico', methods=['get'])(favicon)
+
+    def run(self, host="0.0.0.0", port=18888, debug=True):
+        self.app.run(host=host, port=port, debug=debug)
 
 
-@app.route('/favicon.ico', methods=['get'])
-def favicon():
-    return flask.send_file('favicon.ico', mimetype='image/vnd.microsoft.icon')
-
-
+server = WebServer()
+APP = server.app
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=18888, debug=True)
+    server.run()
