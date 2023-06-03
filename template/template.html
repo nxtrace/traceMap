@@ -6,6 +6,7 @@
     <script type="text/javascript"
             src="//api.map.baidu.com/api?type=webgl&v=1.0&ak=GpP2LbK1QIGwk69oWV1QNuZ6pBCieqV6"></script>
     <script type="text/javascript" src="../js/qrcode.js"></script>
+    <script type="text/javascript" src="//bj.bcebos.com/v1/mapopen/github/BMapGLLib/Lushu/src/Lushu.min.js"></script>
     <link rel="stylesheet" href="../css/tracemap.css" media="all" onload="this.media='all'">
     <title>NextTrace traceMap</title>
 </head>
@@ -152,6 +153,11 @@
                 callback: function () {
                     hideQrcode();
                 }
+            }, {
+                text: '播放路书动画',
+                callback: function () {
+                    startLushu()
+                }
             }
         ];
         for (var i = 0; i < txtMenuItem.length; i++) {
@@ -195,6 +201,28 @@
         } else {
             q.style.display = "none";
         }
+    }
+
+    function startLushu() {
+        var icon = 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBzdGFuZGFsb25lPSJubyI/PjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+PHN2ZyB0PSIxNjg1ODA1MjkwMTg5IiBjbGFzcz0iaWNvbiIgdmlld0JveD0iMCAwIDEwMjQgMTAyNCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHAtaWQ9IjMzMDciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCI+PHBhdGggZD0iTTIwOC44OTYgOTYuMjU2aC0xMDIuNHYxMDIuNGg1MS4ydjI1Ny4wMjRoMTAyLjR2LTMwNy4yYzAtMjguNjcyLTIyLjUyOC01Mi4yMjQtNTEuMi01Mi4yMjR6IG00MDUuNTA0IDBINDA5LjZjLTI4LjY3MiAwLTUxLjIgMjIuNTI4LTUxLjIgNTEuMnYyNTcuMDI0YzAgMjguNjcyIDIyLjUyOCA1MS4yIDUxLjIgNTEuMmgyMDQuOGMyOC42NzIgMCA1MS4yLTIyLjUyOCA1MS4yLTUxLjJ2LTI1NmMwLTI4LjY3Mi0yMi41MjgtNTIuMjI0LTUxLjItNTIuMjI0eiBtLTUxLjIgMjU3LjAyNEg0NjAuOHYtMTUzLjZoMTAyLjR2MTUzLjZ6TTg0Ny44NzIgOTYuMjU2aC0xMDIuNHYxMDIuNGg1MS4ydjI1Ny4wMjRoMTAyLjR2LTMwNy4yYzAtMjguNjcyLTIyLjUyOC01Mi4yMjQtNTEuMi01Mi4yMjR6IG0tNTM5LjY0OCA0NzEuMDRIMTAyLjRjLTI4LjY3MiAwLTUxLjIgMjIuNTI4LTUxLjIgNTEuMnYyNTcuMDI0YzAgMjguNjcyIDIyLjUyOCA1MS4yIDUxLjIgNTEuMmgyMDUuODI0YzI4LjY3MiAwIDUxLjItMjIuNTI4IDUxLjItNTEuMnYtMjU2YzAtMjguNjcyLTIyLjUyOC01Mi4yMjQtNTEuMi01Mi4yMjR6IG0tNTEuMiAyNTcuMDI0SDE1My42di0xNTMuNmgxMDIuNGwxLjAyNCAxNTMuNnogbTI2OS4zMTItMjU2aC0xMDIuNHYxMDIuNGg1MS4ydjI1Ny4wMjRoMTAyLjRWNjE5LjUyYzEuMDI0LTI4LjY3Mi0yMi41MjgtNTEuMi01MS4yLTUxLjJ6IG0zOTUuMjY0IDBINzE1Ljc3NmMtMjguNjcyIDAtNTEuMiAyMi41MjgtNTEuMiA1MS4ydjI1Ny4wMjRjMCAyOC42NzIgMjIuNTI4IDUxLjIgNTEuMiA1MS4ySDkyMS42YzI4LjY3MiAwIDUxLjItMjIuNTI4IDUxLjItNTEuMlY2MTkuNTJjMC0yOC42NzItMjMuNTUyLTUxLjItNTEuMi01MS4yeiBtLTUxLjIgMjU2SDc2OHYtMTUzLjZoMTAyLjR2MTUzLjZ6IiBmaWxsPSIjMmMyYzJjIiBwLWlkPSIzMzA4Ij48L3BhdGg+PC9zdmc+';
+        lushu = new BMapGLLib.LuShu(map, polyline.getPath(), {
+            geodesic: true,
+            autoCenter: true,
+            icon: new BMapGL.Icon(icon, new BMapGL.Size(24, 24), { anchor: new BMapGL.Size(12, 12) }),
+            speed: 1000000,
+            enableRotation: true
+        });
+        lushu.start()
+        // 每隔一段时间检查是否播放完成
+        var checkLushu = setInterval(function(){
+            if (lushu.i >= lushu.path.length-1) {
+                // 移除路书对象
+                map.removeOverlay(lushu._marker);
+                map.removeOverlay(lushu._markerL);
+                map.removeOverlay(lushu._markerR);
+                clearInterval(checkLushu);
+            }
+        }, 100);
     }
 
     if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
