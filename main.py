@@ -78,7 +78,7 @@ def process(rawData: dict, filename=str(int(datetime.datetime.now().timestamp())
     :return: str, HTML文件路径
     """
     # print(rawData)
-    urlPrefix = "https://api.leo.moe/tracemap/"
+    urlPrefix = "https://assets.nxtrace.org/tracemap/"
     coordinatesList = []
     for k in rawData['Hops']:
         for j in k:
