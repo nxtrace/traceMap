@@ -1,10 +1,35 @@
-import uuid
-
 import flask
 from flask import request
 
 from __init__ import *
 from main import process
+
+
+def is_version_acceptable(user_agent):
+    """
+    判断客户端版本是否符合要求
+    :param user_agent:
+    :return: 0 不符合要求 1 最新版本 2 符合要求但可升级的版本
+    """
+    # 正则表达式用于匹配版本号
+    match = re.search(r"NextTrace v([\d.]+)/", user_agent)
+    if match:
+        user_version = match.group(1)
+        try:
+            # 使用 packaging.version 比较版本号
+            if version.parse(user_version) >= version.parse(accept_version):
+                if version.parse(user_version) >= version.parse(latest_version):
+                    return 1
+                else:
+                    return 2
+            else:
+                return 0
+        except ValueError:
+            # 如果无法解析版本号，视为不符合要求
+            return 0
+    else:
+        # 如果无法解析版本号，视为不符合要求
+        return 0
 
 
 def html(filename):
@@ -32,7 +57,14 @@ def api():
         logging.error(e)
         print(traceback.format_exc())
         return "", 500
-    return filename, 200
+    # 根据UA判断版本
+    version_result = is_version_acceptable(request.headers.get('User-Agent'))
+    if version_result == 1:
+        return filename, 200
+    elif version_result == 2:
+        return filename, 200
+    else:
+        return filename + '\n' + '您正在使用的版本，将在一个月内停止支持，请及时升级您的客户端', 406
 
 
 class WebServer:
