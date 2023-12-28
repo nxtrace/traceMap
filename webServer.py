@@ -28,8 +28,24 @@ def is_version_acceptable(user_agent):
             # 如果无法解析版本号，视为不符合要求
             return 0
     else:
-        # 如果无法解析版本号，视为不符合要求
-        return 0
+        match = re.search(r"NextTrace ([\d.]+)/", user_agent)  # 给 HomeBrew 版本的不规范版本擦屁股
+        if match:
+            user_version = match.group(1)
+            try:
+                # 使用 packaging.version 比较版本号
+                if version.parse(user_version) >= version.parse(accept_version):
+                    if version.parse(user_version) >= version.parse(latest_version):
+                        return 1
+                    else:
+                        return 2
+                else:
+                    return 0
+            except ValueError:
+                # 如果无法解析版本号，视为不符合要求
+                return 0
+        else:
+            # 如果无法解析版本号，视为不符合要求
+            return 0
 
 
 def html(filename):
