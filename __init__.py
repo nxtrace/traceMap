@@ -18,7 +18,7 @@ from requests.adapters import HTTPAdapter
 import html
 
 accept_version = "1.2.7"
-latest_version = "1.2.8"
+latest_version = "1.3.0"
 
 if __name__ == '__main__':
     _ = str(json) + str(logging) + str(ThreadPool()) + str(datetime) + str(os) + str(html) + str(re) + str(Union) + \
