@@ -1,7 +1,7 @@
 # -- coding: utf-8 --
 
 from __init__ import *
-
+import html
 localQuery = True
 
 
@@ -41,7 +41,7 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
                + i[3] + ' ' \
                + 'RTT:' + i[8] + 'ms'  # + i[6]
         if k == len(locationsRawList) - 1:
-            textList.append(text)
+            textList.append(html.escape(text))
             text = '<br>'.join(textList)
             lat += random.uniform(-0.01, 0.01)
             lng += random.uniform(-0.01, 0.01)
@@ -50,10 +50,10 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
             textList = []
             break
         if lat == locationsRawList[k + 1][0] and lng == locationsRawList[k + 1][1]:
-            textList.append(text)
+            textList.append(html.escape(text))
             continue
         else:
-            textList.append(text)
+            textList.append(html.escape(text))
             text = '<br>'.join(textList)
             lat += random.uniform(-0.01, 0.01)
             lng += random.uniform(-0.01, 0.01)
@@ -64,7 +64,7 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
     with open('template/template.html', 'r', encoding='utf-8') as f:
         template = f.read()
         new_content = (template.replace("%_REPLACE_CONTENT0_%", ''.join(content))).replace(
-            "%_REPLACE_CONTENT1_%",json.dumps(tableDataList,ensure_ascii=False)
+            "%_REPLACE_CONTENT1_%", json.dumps(tableDataList, ensure_ascii=False)
         )
         with open(os.path.join(output_path, file_name), 'w', encoding='utf-8') as fp:
             fp.write(new_content)
@@ -109,6 +109,8 @@ def process(rawData: dict, filename=str(int(datetime.datetime.now().timestamp())
                     ]
                 )
                 break
+    if (len(coordinatesList) == 0):
+        return "没有需要绘制的数据。"
     draw(coordinatesList, './html', filename)
     return urlPrefix + filename
 
