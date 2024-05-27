@@ -1,4 +1,4 @@
-requests~=2.31.0
+requests~=2.32.2
 folium~=0.16.0
 Flask~=3.0.3
 gunicorn~=22.0.0
