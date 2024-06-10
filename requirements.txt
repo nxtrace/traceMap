@@ -4,4 +4,4 @@ Flask~=3.0.3
 gunicorn~=22.0.0
 IPy~=1.1
 translate~=3.6.1
-packaging~=24.0
+packaging~=24.1
