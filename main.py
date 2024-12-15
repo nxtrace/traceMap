@@ -29,7 +29,7 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
         locationsRawList[0][5] = str(IPy.IP(locationsRawList[0][5]).make_net('48'))
         locationsRawList[-1][5] = str(IPy.IP(locationsRawList[-1][5]).make_net('48'))
 
-    tableDataList = [[i[7], i[5], i[8], i[4], i[2]] for i in locationsRawList]
+    tableDataList = [[i[7], i[5], i[9], i[8], i[4], i[2]] for i in locationsRawList]
     textList = []
 
     for k, i in enumerate(locationsRawList):
@@ -98,14 +98,16 @@ def process(rawData: dict, filename=str(int(datetime.datetime.now().timestamp())
                     tmpCity = j['Geo']['city']
                 coordinatesList.append(
                     [
-                        j['Geo']['lat'], j['Geo']['lng'],
+                        j['Geo']['lat'],
+                        j['Geo']['lng'],
                         tmpCity,
                         j['Geo']['owner'],
                         j['Geo']['asnumber'] if 'asnumber' in j['Geo'] else '',
                         j['Address']['IP'] if 'IP' in j['Address'] else '',
                         j['whois'] if 'whois' in j else '',
                         f'{j["TTL"]}' if 'TTL' in j else '',
-                        f'{(j["RTT"] / 1_000_000):.2f}' if 'RTT' in j else ''  # unit: ms
+                        f'{(j["RTT"] / 1_000_000):.2f}' if 'RTT' in j else '',  # unit: ms
+                        j['Hostname'] if 'Hostname' in j else ''
                     ]
                 )
                 break
