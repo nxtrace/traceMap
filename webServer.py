@@ -11,37 +11,40 @@ def is_version_acceptable(user_agent):
     :param user_agent:
     :return: 0 不符合要求 1 最新版本 2 符合要求但可升级的版本
     """
+
     # 正则表达式用于匹配版本号
-    match = re.search(r"NextTrace v([\d.]+(?:-[0-9A-Za-z.-]+)?)/", user_agent)
+    match = re.search(r"NextTrace v(\d+\.\d+\.\d+)", user_agent)
     if match:
         user_version = match.group(1)
         try:
-            # 使用 packaging.version 比较版本号
-            if version.parse(user_version) >= version.parse(accept_version):
-                if version.parse(user_version) >= version.parse(latest_version):
+            acc = version.parse(accept_version)
+            lat = version.parse(latest_version)
+            usr = version.parse(user_version)  # compare by numeric core only
+            if usr >= acc:
+                if usr >= lat:
                     return 1
                 else:
                     return 2
             else:
                 return 0
         except ValueError:
-            # 如果无法解析版本号，视为不符合要求
             return 0
     else:
-        match = re.search(r"NextTrace ([\d.]+(?:-[0-9A-Za-z.-]+)?)/", user_agent)  # 给 HomeBrew 版本的不规范版本擦屁股
+        match = re.search(r"NextTrace (\d+\.\d+\.\d+)", user_agent)  # 给 HomeBrew 版本的不规范版本擦屁股
         if match:
             user_version = match.group(1)
             try:
-                # 使用 packaging.version 比较版本号
-                if version.parse(user_version) >= version.parse(accept_version):
-                    if version.parse(user_version) >= version.parse(latest_version):
+                acc = version.parse(accept_version)
+                lat = version.parse(latest_version)
+                usr = version.parse(user_version)
+                if usr >= acc:
+                    if usr >= lat:
                         return 1
                     else:
                         return 2
                 else:
                     return 0
             except ValueError:
-                # 如果无法解析版本号，视为不符合要求
                 return 0
         else:
             # 如果无法解析版本号，视为不符合要求

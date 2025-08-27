@@ -1,6 +1,6 @@
-requests~=2.32.3
-folium~=0.19.2
-Flask~=3.1.0
+requests~=2.32.5
+folium~=0.20.0
+Flask~=3.1.2
 gunicorn~=23.0.0
 IPy~=1.1
 translate~=3.6.1
