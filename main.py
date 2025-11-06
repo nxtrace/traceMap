@@ -21,13 +21,24 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
         location_center_lng = (locationsRawList[0][1] + locationsRawList[-1][1]) / 2
     content += 'map.centerAndZoom(new BMapGL.Point({}, {}), 4)\n'.format(location_center_lng, location_center_lat)
 
+    def safe_make_net(ip_value: str, mask: str) -> str:
+        """Return CIDR string when possible; otherwise preserve original value."""
+        if not ip_value:
+            return ip_value
+        if '/' in ip_value:
+            return ip_value
+        try:
+            return str(IPy.IP(ip_value).make_net(mask))
+        except ValueError:
+            return ip_value
+
     isIPv4 = (IPy.IP(locationsRawList[0][5]).version() == 4)
     if isIPv4:
-        locationsRawList[0][5] = str(IPy.IP(locationsRawList[0][5]).make_net('24'))
-        locationsRawList[-1][5] = str(IPy.IP(locationsRawList[-1][5]).make_net('24'))
+        locationsRawList[0][5] = safe_make_net(locationsRawList[0][5], '24')
+        locationsRawList[-1][5] = safe_make_net(locationsRawList[-1][5], '24')
     else:
-        locationsRawList[0][5] = str(IPy.IP(locationsRawList[0][5]).make_net('48'))
-        locationsRawList[-1][5] = str(IPy.IP(locationsRawList[-1][5]).make_net('48'))
+        locationsRawList[0][5] = safe_make_net(locationsRawList[0][5], '48')
+        locationsRawList[-1][5] = safe_make_net(locationsRawList[-1][5], '48')
 
     tableDataList = [[i[7], i[5], i[9], i[8], i[4], i[2]] for i in locationsRawList]
     textList = []
