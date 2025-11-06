@@ -3,14 +3,145 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no"/>
-    <script type="text/javascript"
-            src="https://api.map.baidu.com/api?type=webgl&v=1.0&ak=R7e25Rjwc7IPwpOhGwbBku4X0fRppYtD"></script>
+    <script src="https://unpkg.com/maplibre-gl@5.9.0/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@5.9.0/dist/maplibre-gl.css" rel="stylesheet"/>
     <script type="text/javascript" src="../js/qrcode.js"></script>
-    <script type="text/javascript" src="https://bj.bcebos.com/v1/mapopen/github/BMapGLLib/Lushu/src/Lushu.min.js"></script>
     <link rel="stylesheet" href="../css/tracemap.css" media="all" onload="this.media='all'">
-    <title>NextTrace traceMap</title>
+    <title>NextTrace traceMap (MapLibre)</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+        .maplibregl-popup-content {
+            padding: 10px;
+            max-width: 300px;
+        }
+        .maplibregl-popup-content h3 {
+            margin: 0 0 10px 0;
+            color: purple;
+        }
+        .marker {
+            background-color: #e74c3c;
+            border: 2px solid white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .marker:hover {
+            width: 28px;
+            height: 28px;
+            margin-left: -2px;
+            margin-top: -2px;
+            font-size: 14px;
+        }
+        .table-container {
+            position: absolute;
+            left: 10px;
+            z-index: 2;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: block;
+        }
+        .table-container table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 13px;
+        }
+        .table-container th {
+            background: purple;
+            color: white;
+            padding: 8px;
+            text-align: left;
+            position: sticky;
+            top: 0;
+        }
+        .table-container td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #ddd;
+        }
+        .table-container tr:hover {
+            background: #f5f5f5;
+        }
+        .table-container > div {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+        .qrcode-container {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 2;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: none;
+        }
+        .context-menu {
+            position: absolute;
+            display: none;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            z-index: 1000;
+            min-width: 150px;
+        }
+        .context-menu-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        .context-menu-item:last-child {
+            border-bottom: none;
+        }
+        .context-menu-item:hover {
+            background: #f0f0f0;
+        }
+        #bt {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1;
+            display: none;
+        }
+        #bt button {
+            display: block;
+            margin-bottom: 5px;
+            padding: 8px 15px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        #bt button:hover {
+            background: #f0f0f0;
+        }
+    </style>
 </head>
 <body>
+<div id="bt"></div>
 <div class="table-container" id="myTable">
     <table>
         <tr>
@@ -23,151 +154,191 @@
         </tr>
         <tbody id="table-body"></tbody>
     </table>
-    <div>Tips:3D视角和路由表格可通过右键菜单切换显示.</div>
+    <div>Tips: 右键点击地图显示菜单</div>
 </div>
 <div class="qrcode-container">
     <div id="qrcode"></div>
 </div>
-<div id="bt"></div>
-<div id="allmap"></div>
+<div class="context-menu" id="contextMenu">
+    <div class="context-menu-item" onclick="map.zoomIn(); hideContextMenu()">放大一级</div>
+    <div class="context-menu-item" onclick="map.zoomOut(); hideContextMenu()">缩小一级</div>
+    <div class="context-menu-item" onclick="toggle3D(); hideContextMenu()">3D视角</div>
+    <div class="context-menu-item" onclick="hideTable(); hideContextMenu()">路由表</div>
+    <div class="context-menu-item" onclick="hideQrcode(); hideContextMenu()">QrCode</div>
+    <div class="context-menu-item" onclick="startAnimation(); hideContextMenu()">播放路径动画</div>
+</div>
+<div id="map"></div>
 </body>
 </html>
 <script type="text/javascript">
+    // Initialize variables
+    let pathCoordinates = [];
+    let markersData = []; // Store marker data before map loads
+    let markers = [];
+    let is3D = false;
+    let initialCenter = [0, 0];
+    let initialZoom = 2;
+    let currentProjection = 'mercator'; // Track current projection
+    let hopCounter = 0; // Track hop number for markers
 
-    function AddLabel(map, cityName, lat, lon) {
-        var opts = {
-            position: new BMapGL.Point(lon, lat), // 指定文本标注所在的地理位置
-            offset: new BMapGL.Size(-30, 3) // 设置文本偏移量
+    // Compatibility wrapper for Baidu Maps API
+    const path = []; // Dummy path array for compatibility
+
+    // Mock BMapGL.Point for compatibility
+    if (typeof BMapGL === 'undefined') {
+        window.BMapGL = {
+            Point: function(lng, lat) {
+                return { lng: lng, lat: lat };
+            }
         };
-        // 创建文本标注对象
-        var label = new BMapGL.Label(cityName, opts);
-        // 自定义文本标注样式
-        label.setStyle({
-            color: 'purple',
-            borderRadius: '5px',
-            borderColor: 'rgba(0,0,0,0)',
-            padding: '3px',
-            fontSize: '16px',
-            height: '30px',
-            lineHeight: '30px',
-            fontFamily: '微软雅黑',
-            backgroundColor: "rgba(255,255,0,0.3)"
-        });
-        map.addOverlay(label);
     }
 
-    function AddPathPoint(path, lat, lon) {
-        tmp = new BMapGL.Point(lon, lat)
-        path.push(tmp)
-    }
-
-    function AddPoint(map, name, description, lat, lon) {
-        var point = new BMapGL.Point(lon, lat);
-        var marker = new BMapGL.Marker(point);  // 创建标注
-        map.addOverlay(marker);              // 将标注添加到地图中
-        var opts = {
-            width: 100,     // 信息窗口宽度
-            // height: 70,     // 信息窗口高度
-            title: name, // 信息窗口标题
-            message: description
+    // Temporary map object for compatibility with Python-injected code
+    let map = {
+        centerAndZoom: function(point, zoom) {
+            initialCenter = [point.lng || point[0], point.lat || point[1]];
+            // by default BMapGL is too large for maplibre.
+            initialZoom = Math.max(zoom - 2, 0);
         }
-        var infoWindow = new BMapGL.InfoWindow(description, opts);  // 创建信息窗口对象
-        marker.addEventListener("click", function () {
-            map.openInfoWindow(infoWindow, point); //开启信息窗口
-        });
+    };
+
+    function AddPathPoint(pathObj, lat, lon) {
+        // Note: pathObj parameter is for compatibility with Baidu Maps version
+        
+        // Handle antimeridian crossing for shortest path
+        if (pathCoordinates.length > 0) {
+            const prevLng = pathCoordinates[pathCoordinates.length - 1][0];
+            const lngDiff = lon - prevLng;
+            
+            // If the difference is >= 180, we should go the other way
+            if (lngDiff >= 180) {
+                lon -= 360;
+            } else if (lngDiff < -180) {
+                lon += 360;
+            }
+        }
+        
+        pathCoordinates.push([lon, lat]);
     }
 
-    var map = new BMapGL.Map("allmap");
-    map.enableScrollWheelZoom(true);
-    var path = [];
+    function AddPoint(mapObj, name, description, lat, lon) {
+        // Store marker data to be added after map loads
+        hopCounter++;
+        markersData.push({ name, description, lat, lon, hopNumber: hopCounter });
+    }
 
+    // Python will inject data here
     // Python 写入部分开始
 
     %_REPLACE_CONTENT0_%
 
     // Python 写入部分结束
 
-
-    // map.centerAndZoom(new BMapGL.Point(-40, 40), 4);
-
-    // // 这里添加标签
-    // AddLabel(map, "洛杉矶", 34.0522346496582, -118.24368286132812)
-    // AddLabel(map, "法兰克福", 50.110923767089844, 8.682126998901367)
-
-    // // 这里添加节点
-    // AddPathPoint(path, 34.0522346496582, -118.24368286132812)
-    // AddPathPoint(path, 50.110923767089844, 8.682126998901367)
-
-    // // 这里添加坐标点
-    // AddPoint(map, "洛杉矶", "cogentco.com", 34.0522346496582, -118.24368286132812)
-    // AddPoint(map, "法兰克福", "cogentco.com", 50.110923767089844, 8.682126998901367)
-
-    var polyline = new BMapGL.Polyline(path, {
-        clip: false,
-        geodesic: true,
-        strokeWeight: 3,
-        strokeColor: "purple",
+    // Initialize the map with correct initial view
+    map = new maplibregl.Map({
+        container: 'map',
+        style: 'https://tiles.openfreemap.org/styles/liberty',
+        center: initialCenter,
+        zoom: initialZoom,
+        pitch: 0,
+        bearing: 0
     });
 
-    // map.setMapType(BMAP_EARTH_MAP);
-    map.addOverlay(polyline);
-    map.setMapStyleV2({
-        styleId: 'ddc6d516d02f045825a181edb1adecea'
-    });
+    map.addControl(new maplibregl.NavigationControl());
+    map.addControl(new maplibregl.FullscreenControl());
 
-    function func_3D() {
-        if (map.getMapType() === BMAP_EARTH_MAP) {
-            map.setMapType(BMAP_NORMAL_MAP)
-            map.enableScrollWheelZoom(true);
-        }
-        else {
-            map.setMapType(BMAP_EARTH_MAP)
-            map.enableScrollWheelZoom(true);
-        }
-    }
+    // Wait for the map to load
+    map.on('load', function() {
+        // Add all markers
+        markersData.forEach(data => {
+            const el = document.createElement('div');
+            el.className = 'marker';
+            el.textContent = data.hopNumber; // Display hop number
+            
+            const popup = new maplibregl.Popup({ offset: 25 }).setHTML(
+                `<h3>${data.name}</h3><div style="max-height: 200px; overflow-y: auto;">${data.description}</div>`
+            );
+            
+            const marker = new maplibregl.Marker({
+                    element: el,
+                })
+                .setLngLat([data.lon, data.lat])
+                .setPopup(popup)
+                .addTo(map);
+            
+            markers.push(marker);
+        });
 
-    function addMenu(){
-        var menu = new BMapGL.ContextMenu();
-        var txtMenuItem = [
-            {
-                text: '放大一级',
-                callback: function () {
-                    map.zoomIn();
-                }
-            }, {
-                text: '缩小一级',
-                callback: function () {
-                    map.zoomOut();
-                }
-            }, {
-                text: '3D视角',
-                callback: function () {
-                    func_3D();
-                }
-            }, {
-                text: '路由表',
-                callback: function () {
-                    hideTable();
-                }
-            }, {
-                text: 'QrCode',
-                callback: function () {
-                    hideQrcode();
-                }
-            }, {
-                text: '播放路书动画',
-                callback: function () {
-                    startLushu()
+        // Add the route line
+        map.addSource('route', {
+            'type': 'geojson',
+            'data': {
+                'type': 'Feature',
+                'properties': {},
+                'geometry': {
+                    'type': 'LineString',
+                    'coordinates': pathCoordinates
                 }
             }
-        ];
-        for (var i = 0; i < txtMenuItem.length; i++) {
-            menu.addItem(new BMapGL.MenuItem(txtMenuItem[i].text, txtMenuItem[i].callback, 100));
+        });
+
+        map.addLayer({
+            'id': 'route',
+            'type': 'line',
+            'source': 'route',
+            'layout': {
+                'line-join': 'round',
+                'line-cap': 'round'
+            },
+            'paint': {
+                'line-color': '#9b59b6',
+                'line-width': 3,
+                'line-opacity': 0.8
+            }
+        });
+
+        // Add animated layer for animation
+        map.addSource('animation-point', {
+            'type': 'geojson',
+            'data': {
+                'type': 'FeatureCollection',
+                'features': []
+            }
+        });
+
+        map.addLayer({
+            'id': 'animation-point',
+            'type': 'circle',
+            'source': 'animation-point',
+            'paint': {
+                'circle-radius': 8,
+                'circle-color': '#FFA500',
+                'circle-stroke-width': 2,
+                'circle-stroke-color': '#ffffff'
+            }
+        });
+    });
+
+    function toggle3D() {
+        if (currentProjection === 'mercator') {
+            // Switch to globe projection
+            map.setProjection({
+                type: 'globe'
+            });
+            currentProjection = 'globe';
+            is3D = true;
+        } else {
+            // Switch back to mercator projection
+            map.setProjection({
+                type: 'mercator'
+            });
+            currentProjection = 'mercator';
+            is3D = false;
         }
-        map.addContextMenu(menu);
     }
+
     function generateTable() {
-        const data = %_REPLACE_CONTENT1_%;
+        const data = %_REPLACE_CONTENT1_%;;
 
         const tableBody = document.getElementById("table-body");
         data.forEach(item => {
@@ -180,64 +351,132 @@
             tableBody.appendChild(row);
         });
     }
-    generateTable();
+
     function hideTable() {
-        var t = document.getElementById("myTable");
-        if (t.style.display === "none") {
+        const t = document.getElementById("myTable");
+        const currentDisplay = window.getComputedStyle(t).display;
+        if (currentDisplay === "none") {
             t.style.display = "block";
         } else {
             t.style.display = "none";
         }
     }
+
     function generateQrcode() {
         new QRCode(document.getElementById("qrcode"), window.location.href);
     }
-    generateQrcode();
-    hideQrcode();
 
     function hideQrcode() {
-        var q = document.getElementById("qrcode");
-        if (q.style.display === "none") {
+        const q = document.getElementsByClassName("qrcode-container")[0];
+        const currentDisplay = window.getComputedStyle(q).display;
+        if (currentDisplay === "none") {
             q.style.display = "block";
         } else {
             q.style.display = "none";
         }
     }
 
-    function startLushu() {
-        var icon = '../css/light.png'
-        //var icon = 'data:image/svg+xml;base64,PHN2ZyBjbGFzcz0iaWNvbiIgdmlld0JveD0iMCAwIDEwMjQgMTAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCI+PHBhdGggZD0iTTU4LjE4NyAyNjEuNTE0bDQzMS41NjQgMjQ0LjU1M2EyNC40NTUgMjQuNDU1IDAgMCAwIDI0LjExNCAwbDQzMS41NjMtMjQ0LjU1M2MxNy4wMjktOS42NSAxNi4zODYtMzQuMzk3LTEuMTItNDMuMTVMNTEyLjc0NCAyLjU4MmEyNC40NTUgMjQuNDU1IDAgMCAwLTIxLjg3MyAwTDU5LjMwNyAyMTguMzY0Yy0xNy41MDYgOC43NTMtMTguMTQ4IDMzLjUtMS4xMiA0My4xNXptMjQuMTE0LTQyLjU1M2wtMS4xMiA0My4xNUw1MTIuNzQ0IDQ2LjMyOWgtMjEuODczTDkyMi40MzUgMjYyLjExbC0xLjEyLTQzLjE1TDQ4OS43NSA0NjMuNTEzaDI0LjExNEw4Mi4zIDIxOC45NjF6Ii8+PHBhdGggZD0iTTQ3Ny4zNTIgNTA0LjkzdjQ2OS44NjRjMCAxOC43MiAyMC4xNzQgMzAuNDk5IDM2LjQ3NyAyMS4yOTdsNDYwLjMzNS0yNTkuODM3YTI0LjQ1NSAyNC40NTUgMCAwIDAgMTIuNDM0LTIxLjI5N3YtMzE2LjQ4YzAtMTMuNTA2LTEwLjk1LTI0LjQ1NS0yNC40NTUtMjQuNDU1LTEzLjUwNyAwLTI0LjQ1NiAxMC45NDktMjQuNDU2IDI0LjQ1NXYzMTYuNDhsMTIuNDM0LTIxLjI5Ni00NjAuMzM0IDI1OS44MzYgMzYuNDc2IDIxLjI5N1Y1MDQuOTNjMC0xMy41MDctMTAuOTQ5LTI0LjQ1Ni0yNC40NTUtMjQuNDU2LTEzLjUwNyAwLTI0LjQ1NiAxMC45NS0yNC40NTYgMjQuNDU2eiIvPjxwYXRoIGQ9Ik01MTQuNDIyIDk1My44NDNMODIuODU4IDY5NC4wMDYgOTQuNyA3MTQuOTU3VjI1NC42MjNjMC0xMy41MDctMTAuOTQ5LTI0LjQ1Ni0yNC40NTUtMjQuNDU2LTEzLjUwNiAwLTI0LjQ1NSAxMC45NS0yNC40NTUgMjQuNDU2djQ2MC4zMzRhMjQuNDU1IDI0LjQ1NSAwIDAgMCAxMS44NCAyMC45NTFsNDMxLjU2NSAyNTkuODM3YzExLjU3IDYuOTY3IDI2LjU5OCAzLjIzNCAzMy41NjUtOC4zMzcgNi45NjYtMTEuNTcgMy4yMzQtMjYuNTk4LTguMzM3LTMzLjU2NXoiLz48cGF0aCBkPSJNMTcyLjc0NSA0NDguMjE4TDMxNi42IDUzNC41MzFjMTEuNTgyIDYuOTUgMjYuNjA0IDMuMTk0IDMzLjU1Mi04LjM4OCA2Ljk1LTExLjU4MSAzLjE5NC0yNi42MDMtOC4zODgtMzMuNTUyTDE5Ny45MSA0MDYuMjc4Yy0xMS41ODItNi45NDktMjYuNjA0LTMuMTkzLTMzLjU1MyA4LjM4OC02Ljk0OSAxMS41ODItMy4xOTMgMjYuNjA0IDguMzg4IDMzLjU1MnoiLz48L3N2Zz4='
-        var lushu = new BMapGLLib.LuShu(map, polyline.getPath(), {
-            geodesic: true,
-            autoCenter: true,
-            icon: new BMapGL.Icon(icon, new BMapGL.Size(30, 52), {anchor: new BMapGL.Size(12, 12)}),
-            speed: 3000000,
-            enableRotation: true
-        });
-        lushu.start()
-        // 每隔一段时间检查是否播放完成
-        var checkLushu = setInterval(function () {
-            if (lushu.i >= lushu.path.length - 1) {
-                // 移除路书对象
-                map.removeOverlay(lushu._marker);
-                map.removeOverlay(lushu._markerL);
-                map.removeOverlay(lushu._markerR);
-                clearInterval(checkLushu);
+    let animationRunning = false;
+    let animationFrame = null;
+
+    function startAnimation() {
+        if (animationRunning) return;
+        if (pathCoordinates.length < 2) return;
+
+        animationRunning = true;
+        let counter = 0;
+        const totalSteps = pathCoordinates.length * 20; // Interpolate between points
+        
+        function animate() {
+            if (counter >= totalSteps) {
+                // Remove animation point
+                map.getSource('animation-point').setData({
+                    'type': 'FeatureCollection',
+                    'features': []
+                });
+                animationRunning = false;
+                return;
             }
-        }, 20);
+
+            const progress = counter / totalSteps;
+            const segmentLength = 1 / (pathCoordinates.length - 1);
+            const segmentIndex = Math.floor(progress / segmentLength);
+            const segmentProgress = (progress % segmentLength) / segmentLength;
+
+            if (segmentIndex < pathCoordinates.length - 1) {
+                const start = pathCoordinates[segmentIndex];
+                const end = pathCoordinates[segmentIndex + 1];
+                
+                const lng = start[0] + (end[0] - start[0]) * segmentProgress;
+                const lat = start[1] + (end[1] - start[1]) * segmentProgress;
+
+                map.getSource('animation-point').setData({
+                    'type': 'FeatureCollection',
+                    'features': [{
+                        'type': 'Feature',
+                        'geometry': {
+                            'type': 'Point',
+                            'coordinates': [lng, lat]
+                        }
+                    }]
+                });
+
+                // Move camera to follow the point
+                map.easeTo({
+                    center: [lng, lat],
+                    duration: 50
+                });
+            }
+
+            counter++;
+            animationFrame = requestAnimationFrame(animate);
+        }
+
+        animate();
     }
 
+    // Context menu
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        const menu = document.getElementById('contextMenu');
+        menu.style.display = 'block';
+        menu.style.left = e.pageX + 'px';
+        menu.style.top = e.pageY + 'px';
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.context-menu')) {
+            hideContextMenu();
+        }
+    });
+
+    function hideContextMenu() {
+        document.getElementById('contextMenu').style.display = 'none';
+    }
+
+    // Initialize
+    generateTable();
+    generateQrcode();
+
+    // Mobile device detection
     if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
-        // 若当前设备是移动设备,不添加菜单而是在id="bt"的div中添加按钮
+        // Show buttons for mobile devices instead of context menu
         const bt = document.getElementById("bt");
-        bt.innerHTML = "<button onclick='func_3D()'>3D视角</button>";
+        bt.style.display = "block";
+        bt.innerHTML = "<button onclick='toggle3D()'>3D视角</button>";
         bt.innerHTML += "<button onclick='hideTable()'>路由表</button>";
         bt.innerHTML += "<button onclick='hideQrcode()'>QrCode</button>";
+        bt.innerHTML += "<button onclick='startAnimation()'>播放动画</button>";
+        
+        // Update tip text for mobile
+        const tipDiv = document.querySelector(".table-container > div");
+        if (tipDiv) {
+            tipDiv.textContent = "Tips: 通过左上角按钮切换显示选项";
+        }
+        
+        // Hide table by default on mobile devices
         hideTable();
-    } else {
-        addMenu();
     }
 
-    startLushu();
-
 </script>
+
