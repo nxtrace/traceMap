@@ -91,30 +91,36 @@ def process(rawData: dict, filename=str(int(datetime.datetime.now().timestamp())
     # print(rawData)
     urlPrefix = "https://assets.nxtrace.org/tracemap/"
     coordinatesList = []
-    for k in rawData['Hops']:
-        for j in k:
-            if j['Success']:
-                if 'lat' not in j['Geo']:
+    for hop_group in rawData.get('Hops', []):
+        if not hop_group:
+            continue
+        for j in hop_group:
+            if not j or not isinstance(j, dict):
+                continue
+            if j.get('Success'):
+                geo = j.get('Geo') or {}
+                if 'lat' not in geo:
                     return "不受支持的版本，请更新至最新版本NextTrace。"
-                if j['Geo']['lat'] == 0 and j['Geo']['lng'] == 0:
+                if geo.get('lat') == 0 and geo.get('lng') == 0:
                     continue
-                if j['Geo']['prov'] == "" and j['Geo']['country'] in ['中国', '美国', '俄罗斯']:
+                if geo.get('prov') == "" and geo.get('country') in ['中国', '美国', '俄罗斯']:
                     continue
                 tmpCity = ''
-                if j['Geo']['country'] != '':
-                    tmpCity = j['Geo']['country']
-                if j['Geo']['prov'] != '':
-                    tmpCity = j['Geo']['prov']
-                if j['Geo']['city'] != '':
-                    tmpCity = j['Geo']['city']
+                if geo.get('country'):
+                    tmpCity = geo['country']
+                if geo.get('prov'):
+                    tmpCity = geo['prov']
+                if geo.get('city'):
+                    tmpCity = geo['city']
+                address = j.get('Address') or {}
                 coordinatesList.append(
                     [
-                        j['Geo']['lat'],
-                        j['Geo']['lng'],
+                        geo.get('lat'),
+                        geo.get('lng'),
                         tmpCity,
-                        j['Geo']['owner'],
-                        j['Geo']['asnumber'] if 'asnumber' in j['Geo'] else '',
-                        j['Address']['IP'] if 'IP' in j['Address'] else '',
+                        geo.get('owner', ''),
+                        geo['asnumber'] if 'asnumber' in geo else '',
+                        address['IP'] if 'IP' in address else '',
                         j['whois'] if 'whois' in j else '',
                         f'{j["TTL"]}' if 'TTL' in j else '',
                         f'{(j["RTT"] / 1_000_000):.2f}' if 'RTT' in j else '',  # unit: ms
