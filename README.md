@@ -18,16 +18,19 @@ NextTrace Enhanced traceMap Plugin
   
   POST接口默认路径为`/api`,GET接口默认路径为`/html/<filename>`
 
+  部署前请按实际路径修改 `traceMap.service` 中的 `User`、`WorkingDirectory` 和 venv 路径。
+
   ```bash
   mkdir -p /var/www
   cd /var/www
   git clone https://github.com/tsosunchia/traceMap.git
   cd traceMap
-  pip3 install -r requirements.txt
-  mv traceMap.service /etc/systemd/system/
+  python3 -m venv .venv
+  source .venv/bin/activate
+  pip install -r requirements.txt
+  cp traceMap.service /etc/systemd/system/traceMap.service
   systemctl daemon-reload
-  systemctl enable traceMap.service
-  systemctl start traceMap.service
+  systemctl enable --now traceMap.service
   ```
   
 + 调试模式：调用`main.py`中的`process`函数即可。
@@ -42,4 +45,3 @@ NextTrace Enhanced traceMap Plugin
   ```
     
   默认使用本地查询，如果需要使用OSMAPI查询，请在`main.py`中设置`localQuery`为`False`。
-
