@@ -1,7 +1,7 @@
 requests~=2.32.5
 folium~=0.20.0
 Flask~=3.1.2
-gunicorn~=23.0.0
+gunicorn~=24.1.1
 IPy~=1.1
 translate~=3.6.1
 packaging~=24.2
