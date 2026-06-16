@@ -48,6 +48,10 @@ def _asn_to_number(asn: str):
         return None
 
 
+def _has_drawable_geo(item: list) -> bool:
+    return item[0] is not None and item[1] is not None
+
+
 def _build_trace_json(locationsRawList: list, tableDataList: list, file_name: str) -> dict:
     trace_id = _trace_id_from_filename(file_name)
     hops = []
@@ -105,7 +109,7 @@ def _build_trace_json(locationsRawList: list, tableDataList: list, file_name: st
                 "hops": hops,
             }
         ],
-        "path": [{"lat": item[0], "lon": item[1]} for item in locationsRawList],
+        "path": [{"lat": item[0], "lon": item[1]} for item in locationsRawList if _has_drawable_geo(item)],
         "table": tableDataList,
     }
 
@@ -117,13 +121,19 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
     :param output_path: str, 轨迹图保存路径
     :param file_name: str, 轨迹图保存文件名
     """
-    # 计算中心
     content = []
-    location_center_lat = (locationsRawList[0][0] + locationsRawList[-1][0]) / 2
-    if abs(locationsRawList[0][1] - locationsRawList[-1][1]) > 180:
-        location_center_lng = (locationsRawList[0][1] + locationsRawList[-1][1] + 360) / 2
+    drawableLocations = [item for item in locationsRawList if _has_drawable_geo(item)]
+    if drawableLocations:
+        first_drawable = drawableLocations[0]
+        last_drawable = drawableLocations[-1]
+        location_center_lat = (first_drawable[0] + last_drawable[0]) / 2
+        if abs(first_drawable[1] - last_drawable[1]) > 180:
+            location_center_lng = (first_drawable[1] + last_drawable[1] + 360) / 2
+        else:
+            location_center_lng = (first_drawable[1] + last_drawable[1]) / 2
     else:
-        location_center_lng = (locationsRawList[0][1] + locationsRawList[-1][1]) / 2
+        location_center_lat = 0
+        location_center_lng = 0
     content += 'map.centerAndZoom(new BMapGL.Point({}, {}), 4)\n'.format(location_center_lng, location_center_lat)
 
     def safe_make_net(ip_value: str, mask: str) -> str:
@@ -148,8 +158,25 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
     tableDataList = [[i[7], i[5], i[9], i[8], i[4], i[2]] for i in locationsRawList]
     traceJson = _build_trace_json(locationsRawList, tableDataList, file_name)
     textList = []
+    current_lat = None
+    current_lng = None
+    current_name = ''
 
-    for k, i in enumerate(locationsRawList):
+    def flush_point() -> None:
+        nonlocal current_lat, current_lng, current_name, textList
+        if current_lat is None or current_lng is None or not textList:
+            return
+        text = '<br>'.join(textList)
+        lat = current_lat + random.uniform(-0.01, 0.01)
+        lng = current_lng + random.uniform(-0.01, 0.01)
+        content.append('AddPathPoint(path, {}, {})\n'.format(lat, lng))
+        content.append('AddPoint(map, "{}", "{}", {}, {})\n'.format(current_name, text, lat, lng))
+        textList = []
+        current_lat = None
+        current_lng = None
+        current_name = ''
+
+    for i in locationsRawList:
         lat = i[0]
         lng = i[1]
         text = i[5] + ' ' \
@@ -157,26 +184,27 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
                + 'TTL:' + i[7] + ' ' \
                + i[3] + ' ' \
                + 'RTT:' + i[8] + 'ms'  # + i[6]
-        if k == len(locationsRawList) - 1:
-            textList.append(html.escape(text))
-            text = '<br>'.join(textList)
-            lat += random.uniform(-0.01, 0.01)
-            lng += random.uniform(-0.01, 0.01)
-            content += 'AddPathPoint(path, {}, {})\n'.format(lat, lng)
-            content += 'AddPoint(map, "{}", "{}", {}, {})\n'.format(i[2], text, lat, lng)
-            textList = []
-            break
-        if lat == locationsRawList[k + 1][0] and lng == locationsRawList[k + 1][1]:
+        if not _has_drawable_geo(i):
             textList.append(html.escape(text))
             continue
-        else:
+
+        if current_lat is None and current_lng is None:
+            current_lat = lat
+            current_lng = lng
+            current_name = i[2]
             textList.append(html.escape(text))
-            text = '<br>'.join(textList)
-            lat += random.uniform(-0.01, 0.01)
-            lng += random.uniform(-0.01, 0.01)
-            content += 'AddPathPoint(path, {}, {})\n'.format(lat, lng)
-            content += 'AddPoint(map, "{}", "{}", {}, {})\n'.format(i[2], text, lat, lng)
-            textList = []
+            continue
+
+        if lat == current_lat and lng == current_lng:
+            textList.append(html.escape(text))
+            continue
+
+        flush_point()
+        current_lat = lat
+        current_lng = lng
+        current_name = i[2]
+        textList.append(html.escape(text))
+    flush_point()
 
     with open('template/template.html', 'r', encoding='utf-8') as f:
         template = f.read()
@@ -198,19 +226,30 @@ def process(rawData: dict, filename=str(int(datetime.datetime.now().timestamp())
     """
     # print(rawData)
     coordinatesList = []
-    for hop_group in rawData.get('Hops', []):
+    hopsList = rawData.get('Hops', [])
+    last_success = None
+    for group_index, hop_group in enumerate(hopsList):
         if not hop_group:
             continue
-        for j in hop_group:
+        for probe_index, probe in enumerate(hop_group):
+            if probe and isinstance(probe, dict) and probe.get('Success'):
+                last_success = (group_index, probe_index)
+                break
+    for group_index, hop_group in enumerate(hopsList):
+        if not hop_group:
+            continue
+        for probe_index, j in enumerate(hop_group):
             if not j or not isinstance(j, dict):
                 continue
             if j.get('Success'):
                 geo = j.get('Geo') or {}
                 if 'lat' not in geo:
                     return "不受支持的版本，请更新至最新版本NextTrace。"
-                if geo.get('lat') == 0 and geo.get('lng') == 0:
+                is_terminal_success = last_success == (group_index, probe_index)
+                has_drawable_geo = not (geo.get('lat') == 0 and geo.get('lng') == 0)
+                if not has_drawable_geo and not is_terminal_success:
                     continue
-                if geo.get('prov') == "" and geo.get('country') in ['中国', '美国', '俄罗斯']:
+                if geo.get('prov') == "" and geo.get('country') in ['中国', '美国', '俄罗斯'] and not is_terminal_success:
                     continue
                 tmpCity = ''
                 if geo.get('country'):
@@ -222,8 +261,8 @@ def process(rawData: dict, filename=str(int(datetime.datetime.now().timestamp())
                 address = j.get('Address') or {}
                 coordinatesList.append(
                     [
-                        geo.get('lat'),
-                        geo.get('lng'),
+                        geo.get('lat') if has_drawable_geo else None,
+                        geo.get('lng') if has_drawable_geo else None,
                         tmpCity,
                         geo.get('owner', ''),
                         geo['asnumber'] if 'asnumber' in geo else '',
