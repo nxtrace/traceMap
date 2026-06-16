@@ -48,6 +48,21 @@ def _asn_to_number(asn: str):
         return None
 
 
+def _is_drawable_lat_lng(lat, lng) -> bool:
+    if lat is None or lng is None:
+        return False
+    try:
+        lat = float(lat)
+        lng = float(lng)
+    except (TypeError, ValueError):
+        return False
+    return not (lat == 0 and lng == 0)
+
+
+def _has_drawable_geo(item: list) -> bool:
+    return _is_drawable_lat_lng(item[0], item[1])
+
+
 def _build_trace_json(locationsRawList: list, tableDataList: list, file_name: str) -> dict:
     trace_id = _trace_id_from_filename(file_name)
     hops = []
@@ -105,7 +120,7 @@ def _build_trace_json(locationsRawList: list, tableDataList: list, file_name: st
                 "hops": hops,
             }
         ],
-        "path": [{"lat": item[0], "lon": item[1]} for item in locationsRawList],
+        "path": [{"lat": item[0], "lon": item[1]} for item in locationsRawList if _has_drawable_geo(item)],
         "table": tableDataList,
     }
 
@@ -117,14 +132,20 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
     :param output_path: str, 轨迹图保存路径
     :param file_name: str, 轨迹图保存文件名
     """
-    # 计算中心
     content = []
-    location_center_lat = (locationsRawList[0][0] + locationsRawList[-1][0]) / 2
-    if abs(locationsRawList[0][1] - locationsRawList[-1][1]) > 180:
-        location_center_lng = (locationsRawList[0][1] + locationsRawList[-1][1] + 360) / 2
+    drawableLocations = [item for item in locationsRawList if _has_drawable_geo(item)]
+    if drawableLocations:
+        first_drawable = drawableLocations[0]
+        last_drawable = drawableLocations[-1]
+        location_center_lat = (first_drawable[0] + last_drawable[0]) / 2
+        if abs(first_drawable[1] - last_drawable[1]) > 180:
+            location_center_lng = (first_drawable[1] + last_drawable[1] + 360) / 2
+        else:
+            location_center_lng = (first_drawable[1] + last_drawable[1]) / 2
     else:
-        location_center_lng = (locationsRawList[0][1] + locationsRawList[-1][1]) / 2
-    content += 'map.centerAndZoom(new BMapGL.Point({}, {}), 4)\n'.format(location_center_lng, location_center_lat)
+        location_center_lat = 0
+        location_center_lng = 0
+    content.append('map.centerAndZoom(new BMapGL.Point({}, {}), 4)\n'.format(location_center_lng, location_center_lat))
 
     def safe_make_net(ip_value: str, mask: str) -> str:
         """Return CIDR string when possible; otherwise preserve original value."""
@@ -148,8 +169,30 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
     tableDataList = [[i[7], i[5], i[9], i[8], i[4], i[2]] for i in locationsRawList]
     traceJson = _build_trace_json(locationsRawList, tableDataList, file_name)
     textList = []
+    current_lat = None
+    current_lng = None
+    current_name = ''
 
-    for k, i in enumerate(locationsRawList):
+    def flush_point() -> None:
+        nonlocal current_lat, current_lng, current_name, textList
+        if current_lat is None or current_lng is None or not textList:
+            return
+        text = '<br>'.join(textList)
+        lat = current_lat + random.uniform(-0.01, 0.01)
+        lng = current_lng + random.uniform(-0.01, 0.01)
+        content.append('AddPathPoint(path, {}, {})\n'.format(lat, lng))
+        content.append('AddPoint(map, {}, {}, {}, {})\n'.format(
+            json.dumps(html.escape(current_name), ensure_ascii=False),
+            json.dumps(text, ensure_ascii=False),
+            lat,
+            lng,
+        ))
+        textList = []
+        current_lat = None
+        current_lng = None
+        current_name = ''
+
+    for i in locationsRawList:
         lat = i[0]
         lng = i[1]
         text = i[5] + ' ' \
@@ -157,26 +200,27 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
                + 'TTL:' + i[7] + ' ' \
                + i[3] + ' ' \
                + 'RTT:' + i[8] + 'ms'  # + i[6]
-        if k == len(locationsRawList) - 1:
-            textList.append(html.escape(text))
-            text = '<br>'.join(textList)
-            lat += random.uniform(-0.01, 0.01)
-            lng += random.uniform(-0.01, 0.01)
-            content += 'AddPathPoint(path, {}, {})\n'.format(lat, lng)
-            content += 'AddPoint(map, "{}", "{}", {}, {})\n'.format(i[2], text, lat, lng)
-            textList = []
-            break
-        if lat == locationsRawList[k + 1][0] and lng == locationsRawList[k + 1][1]:
+        if not _has_drawable_geo(i):
             textList.append(html.escape(text))
             continue
-        else:
+
+        if current_lat is None and current_lng is None:
+            current_lat = lat
+            current_lng = lng
+            current_name = i[2]
             textList.append(html.escape(text))
-            text = '<br>'.join(textList)
-            lat += random.uniform(-0.01, 0.01)
-            lng += random.uniform(-0.01, 0.01)
-            content += 'AddPathPoint(path, {}, {})\n'.format(lat, lng)
-            content += 'AddPoint(map, "{}", "{}", {}, {})\n'.format(i[2], text, lat, lng)
-            textList = []
+            continue
+
+        if lat == current_lat and lng == current_lng:
+            textList.append(html.escape(text))
+            continue
+
+        flush_point()
+        current_lat = lat
+        current_lng = lng
+        current_name = i[2]
+        textList.append(html.escape(text))
+    flush_point()
 
     with open('template/template.html', 'r', encoding='utf-8') as f:
         template = f.read()
@@ -198,43 +242,66 @@ def process(rawData: dict, filename=str(int(datetime.datetime.now().timestamp())
     """
     # print(rawData)
     coordinatesList = []
-    for hop_group in rawData.get('Hops', []):
+    hopsList = rawData.get('Hops', [])
+    last_success_group = None
+    for group_index, hop_group in enumerate(hopsList):
         if not hop_group:
             continue
+        for probe in hop_group:
+            if probe and isinstance(probe, dict) and probe.get('Success'):
+                last_success_group = group_index
+                break
+    for group_index, hop_group in enumerate(hopsList):
+        if not hop_group:
+            continue
+        is_terminal_group = last_success_group == group_index
+        selected_probe = None
+        terminal_fallback = None
         for j in hop_group:
             if not j or not isinstance(j, dict):
                 continue
-            if j.get('Success'):
-                geo = j.get('Geo') or {}
-                if 'lat' not in geo:
-                    return "不受支持的版本，请更新至最新版本NextTrace。"
-                if geo.get('lat') == 0 and geo.get('lng') == 0:
-                    continue
-                if geo.get('prov') == "" and geo.get('country') in ['中国', '美国', '俄罗斯']:
-                    continue
-                tmpCity = ''
-                if geo.get('country'):
-                    tmpCity = geo['country']
-                if geo.get('prov'):
-                    tmpCity = geo['prov']
-                if geo.get('city'):
-                    tmpCity = geo['city']
-                address = j.get('Address') or {}
-                coordinatesList.append(
-                    [
-                        geo.get('lat'),
-                        geo.get('lng'),
-                        tmpCity,
-                        geo.get('owner', ''),
-                        geo['asnumber'] if 'asnumber' in geo else '',
-                        address['IP'] if 'IP' in address else '',
-                        j['whois'] if 'whois' in j else '',
-                        f'{j["TTL"]}' if 'TTL' in j else '',
-                        f'{(j["RTT"] / 1_000_000):.2f}' if 'RTT' in j else '',  # unit: ms
-                        j['Hostname'] if 'Hostname' in j else ''
-                    ]
-                )
+            if not j.get('Success'):
+                continue
+            geo = j.get('Geo') or {}
+            if 'lat' not in geo:
+                return "不受支持的版本，请更新至最新版本NextTrace。"
+            has_drawable_geo = _is_drawable_lat_lng(geo.get('lat'), geo.get('lng'))
+            should_skip_region = geo.get('prov') == "" and geo.get('country') in ['中国', '美国', '俄罗斯']
+            if has_drawable_geo and (is_terminal_group or not should_skip_region):
+                selected_probe = j
                 break
+            if is_terminal_group and terminal_fallback is None:
+                terminal_fallback = j
+        if selected_probe is None and is_terminal_group:
+            selected_probe = terminal_fallback
+        if selected_probe is None:
+            continue
+
+        j = selected_probe
+        geo = j.get('Geo') or {}
+        has_drawable_geo = _is_drawable_lat_lng(geo.get('lat'), geo.get('lng'))
+        tmpCity = ''
+        if geo.get('country'):
+            tmpCity = geo['country']
+        if geo.get('prov'):
+            tmpCity = geo['prov']
+        if geo.get('city'):
+            tmpCity = geo['city']
+        address = j.get('Address') or {}
+        coordinatesList.append(
+            [
+                geo.get('lat') if has_drawable_geo else None,
+                geo.get('lng') if has_drawable_geo else None,
+                tmpCity,
+                geo.get('owner', ''),
+                geo['asnumber'] if 'asnumber' in geo else '',
+                address['IP'] if 'IP' in address else '',
+                j['whois'] if 'whois' in j else '',
+                f'{j["TTL"]}' if 'TTL' in j else '',
+                f'{(j["RTT"] / 1_000_000):.2f}' if 'RTT' in j else '',  # unit: ms
+                j['Hostname'] if 'Hostname' in j else ''
+            ]
+        )
     if (len(coordinatesList) == 0):
         return "没有需要绘制的数据。"
     draw(coordinatesList, './html', filename)
