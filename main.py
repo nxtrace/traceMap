@@ -5,6 +5,105 @@ import html
 localQuery = True
 
 
+DEFAULT_HTML_URL_PREFIX = "https://assets.nxtrace.org/tracemap/"
+TRACE_JSON_SCHEMA = "peeras.trace.v1"
+
+
+def _trace_id_from_filename(file_name: str) -> str:
+    return os.path.splitext(os.path.basename(file_name))[0]
+
+
+def _json_filename_for(file_name: str) -> str:
+    return _trace_id_from_filename(file_name) + '.json'
+
+
+def _html_url_for(file_name: str) -> str:
+    url_prefix = os.environ.get("TRACEMAP_HTML_URL_PREFIX", DEFAULT_HTML_URL_PREFIX)
+    return url_prefix + file_name
+
+
+def _return_url_for(file_name: str) -> str:
+    trace_id = _trace_id_from_filename(file_name)
+    template = os.environ.get("TRACEMAP_RETURN_URL_TEMPLATE")
+    if not template:
+        return _html_url_for(file_name)
+    return template.format(id=trace_id, filename=file_name, json_filename=_json_filename_for(file_name))
+
+
+def _asn_to_number(asn: str):
+    if not asn:
+        return None
+    text = str(asn).strip()
+    if text.upper().startswith('AS'):
+        text = text[2:]
+    try:
+        return int(text)
+    except ValueError:
+        return None
+
+
+def _build_trace_json(locationsRawList: list, tableDataList: list, file_name: str) -> dict:
+    trace_id = _trace_id_from_filename(file_name)
+    hops = []
+    for item in locationsRawList:
+        ttl = int(item[7]) if str(item[7]).isdigit() else None
+        hop = {
+            "idx": ttl,
+            "ip": item[5] or None,
+            "rdns": item[9] or "",
+            "asn": _asn_to_number(item[4]),
+            "name": item[3] or "",
+            "cc": "",
+            "city": item[2] or "",
+            "lat": item[0],
+            "lon": item[1],
+            "rtt": float(item[8]) if item[8] != "" else None,
+            "loss": 0,
+            "isTarget": False,
+        }
+        hops.append(hop)
+
+    if hops:
+        hops[-1]["isTarget"] = True
+        first = hops[0]
+        last = hops[-1]
+    else:
+        first = {"lat": 0, "lon": 0, "city": ""}
+        last = {"ip": None, "lat": 0, "lon": 0, "city": ""}
+
+    return {
+        "schema": TRACE_JSON_SCHEMA,
+        "id": trace_id,
+        "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "html_url": _html_url_for(file_name),
+        "target": {
+            "label": last.get("ip") or "",
+            "ip": last.get("ip") or "",
+            "lat": last.get("lat"),
+            "lon": last.get("lon"),
+            "cc": "",
+            "city": last.get("city") or "",
+            "loc": last.get("city") or "",
+        },
+        "probes": [
+            {
+                "id": "ntrace-" + trace_id,
+                "city": first.get("city") or "NextTrace",
+                "cc": "",
+                "country": "",
+                "network": "NextTrace",
+                "asn": 0,
+                "lat": first.get("lat"),
+                "lon": first.get("lon"),
+                "status": "done",
+                "hops": hops,
+            }
+        ],
+        "path": [{"lat": item[0], "lon": item[1]} for item in locationsRawList],
+        "table": tableDataList,
+    }
+
+
 def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
     """
     绘制traceMap
@@ -31,6 +130,9 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
             return str(IPy.IP(ip_value).make_net(mask))
         except ValueError:
             return ip_value
+
+    traceTableDataList = [[i[7], i[5], i[9], i[8], i[4], i[2]] for i in locationsRawList]
+    traceJson = _build_trace_json(locationsRawList, traceTableDataList, file_name)
 
     isIPv4 = (IPy.IP(locationsRawList[0][5]).version() == 4)
     if isIPv4:
@@ -79,6 +181,8 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
         )
         with open(os.path.join(output_path, file_name), 'w', encoding='utf-8') as fp:
             fp.write(new_content)
+    with open(os.path.join(output_path, _json_filename_for(file_name)), 'w', encoding='utf-8') as fp:
+        json.dump(traceJson, fp, ensure_ascii=False)
 
 
 def process(rawData: dict, filename=str(int(datetime.datetime.now().timestamp())) + '.html') -> str:
@@ -89,7 +193,6 @@ def process(rawData: dict, filename=str(int(datetime.datetime.now().timestamp())
     :return: str, HTML文件路径
     """
     # print(rawData)
-    urlPrefix = "https://assets.nxtrace.org/tracemap/"
     coordinatesList = []
     for hop_group in rawData.get('Hops', []):
         if not hop_group:
@@ -131,7 +234,7 @@ def process(rawData: dict, filename=str(int(datetime.datetime.now().timestamp())
     if (len(coordinatesList) == 0):
         return "没有需要绘制的数据。"
     draw(coordinatesList, './html', filename)
-    return urlPrefix + filename
+    return _return_url_for(filename)
 
 
 if __name__ == '__main__':

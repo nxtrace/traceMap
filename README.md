@@ -18,6 +18,23 @@ NextTrace Enhanced traceMap Plugin
   
   POST接口默认路径为`/api`,GET接口默认路径为`/html/<filename>`
 
+  服务端会为每次 trace 同时生成同名 HTML 和 JSON。例如 `abc.html` 会生成 `abc.json`。
+  JSON 可通过 `/json/<id>`、`/json/<id>.json`、`/html/<id>.json` 或 `/tracemap/<id>.json` 读取，
+  其中 JSON 响应默认允许 `https://peer.as`、`https://www.peer.as`、`https://cn.peer.as` 跨域读取。
+
+  可选环境变量：
+
+  ```bash
+  # 返回给 NextTrace 客户端的 URL 模板。可用占位符: {id}, {filename}, {json_filename}
+  export TRACEMAP_RETURN_URL_TEMPLATE='https://peer.as/trace?nt={id}'
+
+  # HTML 的公开地址前缀，写入 JSON 的 html_url 字段
+  export TRACEMAP_HTML_URL_PREFIX='https://assets.nxtrace.org/tracemap/'
+
+  # 允许读取 JSON 的 Origin，逗号分隔
+  export TRACEMAP_JSON_CORS_ORIGINS='https://peer.as,https://www.peer.as,https://cn.peer.as'
+  ```
+
   部署前请按实际路径修改 `traceMap.service` 中的 `User`、`WorkingDirectory` 和 venv 路径。
 
   ```bash
