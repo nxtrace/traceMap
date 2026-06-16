@@ -10,6 +10,8 @@ StandardError=append:/var/log/traceMap_error.log
 WorkingDirectory=/var/www/traceMap
 Environment=VIRTUAL_ENV=/var/www/traceMap/.venv
 Environment=PATH=/var/www/traceMap/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+Environment=TRACEMAP_RETURN_URL_TEMPLATE=https://peer.as/trace?nt={id}
+Environment=TRACEMAP_JSON_CORS_ORIGINS=https://peer.as,https://www.peer.as,https://cn.peer.as
 ExecStart=/var/www/traceMap/.venv/bin/gunicorn --workers 3 -b 0.0.0.0:18888 webServer:APP
 ExecReload=/bin/kill -s HUP $MAINPID
 ExecStop=/bin/kill -s TERM $MAINPID

@@ -1,4 +1,5 @@
 /html/*.html
+/html/*.json
 /log/*.json
 /test/
 __pycache__

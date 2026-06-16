@@ -4,6 +4,12 @@ from flask import request
 from __init__ import *
 from main import process
 
+DEFAULT_JSON_CORS_ORIGINS = {
+    "https://peer.as",
+    "https://www.peer.as",
+    "https://cn.peer.as",
+}
+
 
 def is_version_acceptable(user_agent):
     """
@@ -13,6 +19,7 @@ def is_version_acceptable(user_agent):
     """
 
     # 正则表达式用于匹配版本号
+    user_agent = user_agent or ""
     match = re.search(r"NextTrace v(\d+\.\d+\.\d+)", user_agent)
     if match:
         user_version = match.group(1)
@@ -51,7 +58,50 @@ def is_version_acceptable(user_agent):
             return 0
 
 
+def _json_cors_origins():
+    raw = os.environ.get("TRACEMAP_JSON_CORS_ORIGINS")
+    if raw is None:
+        return DEFAULT_JSON_CORS_ORIGINS
+    return {item.strip() for item in raw.split(",") if item.strip()}
+
+
+def _add_json_cors(resp):
+    origin = request.headers.get("Origin", "").strip()
+    if origin and origin in _json_cors_origins():
+        resp.headers["Access-Control-Allow-Origin"] = origin
+        resp.vary.add("Origin")
+        resp.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+        resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        resp.headers["Access-Control-Max-Age"] = "86400"
+    return resp
+
+
+def _json_filename(filename):
+    base = os.path.basename(filename)
+    if base.endswith(".html"):
+        base = base[:-5]
+    if not base.endswith(".json"):
+        base += ".json"
+    return base
+
+
+def trace_json(filename):
+    if request.method == "OPTIONS":
+        return _add_json_cors(flask.Response(status=204))
+    resp = flask.send_from_directory("html", _json_filename(filename), mimetype="application/json")
+    resp.headers["Cache-Control"] = "public, max-age=86400"
+    return _add_json_cors(resp)
+
+
+def trace_asset(filename):
+    if filename.endswith(".json") or request.method == "OPTIONS":
+        return trace_json(filename)
+    return flask.send_from_directory('html', filename)
+
+
 def html(filename):
+    if filename.endswith(".json"):
+        return trace_json(filename)
     return flask.send_from_directory('html', filename)
 
 
@@ -102,6 +152,8 @@ class WebServer:
 
         self.app.route('/api', methods=['post'])(api)
         self.app.route('/html/<filename>', methods=['get'])(html)
+        self.app.route('/json/<filename>', methods=['GET', 'OPTIONS'])(trace_json)
+        self.app.route('/tracemap/<filename>', methods=['GET', 'OPTIONS'])(trace_asset)
         self.app.route('/favicon.ico', methods=['get'])(favicon)
 
     def run(self, host="0.0.0.0", port=18888, debug=True):
