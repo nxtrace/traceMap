@@ -8,8 +8,6 @@ DEFAULT_JSON_CORS_ORIGINS = {
     "https://peer.as",
     "https://www.peer.as",
     "https://cn.peer.as",
-    "http://127.0.0.1:8787",
-    "http://localhost:8787",
 }
 
 
@@ -71,7 +69,7 @@ def _add_json_cors(resp):
     origin = request.headers.get("Origin", "").strip()
     if origin and origin in _json_cors_origins():
         resp.headers["Access-Control-Allow-Origin"] = origin
-        resp.headers.add("Vary", "Origin")
+        resp.vary.add("Origin")
         resp.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
         resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
         resp.headers["Access-Control-Max-Age"] = "86400"

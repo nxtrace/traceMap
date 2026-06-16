@@ -14,13 +14,14 @@ NextTrace Enhanced traceMap Plugin
 
 + 运行`traceMap`服务器
 
-  默认端口为`8888`
+  默认端口为`18888`
   
   POST接口默认路径为`/api`,GET接口默认路径为`/html/<filename>`
 
   服务端会为每次 trace 同时生成同名 HTML 和 JSON。例如 `abc.html` 会生成 `abc.json`。
   JSON 可通过 `/json/<id>`、`/json/<id>.json`、`/html/<id>.json` 或 `/tracemap/<id>.json` 读取，
   其中 JSON 响应默认允许 `https://peer.as`、`https://www.peer.as`、`https://cn.peer.as` 跨域读取。
+  本地开发 Origin 需要通过 `TRACEMAP_JSON_CORS_ORIGINS` 显式加入。
 
   可选环境变量：
 

@@ -18,7 +18,9 @@ def _json_filename_for(file_name: str) -> str:
 
 
 def _html_url_for(file_name: str) -> str:
-    url_prefix = os.environ.get("TRACEMAP_HTML_URL_PREFIX", DEFAULT_HTML_URL_PREFIX)
+    url_prefix = os.environ.get("TRACEMAP_HTML_URL_PREFIX") or DEFAULT_HTML_URL_PREFIX
+    if not url_prefix.endswith("/"):
+        url_prefix += "/"
     return url_prefix + file_name
 
 
@@ -27,7 +29,11 @@ def _return_url_for(file_name: str) -> str:
     template = os.environ.get("TRACEMAP_RETURN_URL_TEMPLATE")
     if not template:
         return _html_url_for(file_name)
-    return template.format(id=trace_id, filename=file_name, json_filename=_json_filename_for(file_name))
+    try:
+        return template.format(id=trace_id, filename=file_name, json_filename=_json_filename_for(file_name))
+    except (KeyError, ValueError, IndexError) as exc:
+        logging.warning("Invalid TRACEMAP_RETURN_URL_TEMPLATE=%r: %s", template, exc)
+        return _html_url_for(file_name)
 
 
 def _asn_to_number(asn: str):
@@ -131,9 +137,6 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
         except ValueError:
             return ip_value
 
-    traceTableDataList = [[i[7], i[5], i[9], i[8], i[4], i[2]] for i in locationsRawList]
-    traceJson = _build_trace_json(locationsRawList, traceTableDataList, file_name)
-
     isIPv4 = (IPy.IP(locationsRawList[0][5]).version() == 4)
     if isIPv4:
         locationsRawList[0][5] = safe_make_net(locationsRawList[0][5], '24')
@@ -143,6 +146,7 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
         locationsRawList[-1][5] = safe_make_net(locationsRawList[-1][5], '48')
 
     tableDataList = [[i[7], i[5], i[9], i[8], i[4], i[2]] for i in locationsRawList]
+    traceJson = _build_trace_json(locationsRawList, tableDataList, file_name)
     textList = []
 
     for k, i in enumerate(locationsRawList):
