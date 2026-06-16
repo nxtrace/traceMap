@@ -48,8 +48,19 @@ def _asn_to_number(asn: str):
         return None
 
 
+def _is_drawable_lat_lng(lat, lng) -> bool:
+    if lat is None or lng is None:
+        return False
+    try:
+        lat = float(lat)
+        lng = float(lng)
+    except (TypeError, ValueError):
+        return False
+    return not (lat == 0 and lng == 0)
+
+
 def _has_drawable_geo(item: list) -> bool:
-    return item[0] is not None and item[1] is not None
+    return _is_drawable_lat_lng(item[0], item[1])
 
 
 def _build_trace_json(locationsRawList: list, tableDataList: list, file_name: str) -> dict:
@@ -134,7 +145,7 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
     else:
         location_center_lat = 0
         location_center_lng = 0
-    content += 'map.centerAndZoom(new BMapGL.Point({}, {}), 4)\n'.format(location_center_lng, location_center_lat)
+    content.append('map.centerAndZoom(new BMapGL.Point({}, {}), 4)\n'.format(location_center_lng, location_center_lat))
 
     def safe_make_net(ip_value: str, mask: str) -> str:
         """Return CIDR string when possible; otherwise preserve original value."""
@@ -170,7 +181,12 @@ def draw(locationsRawList: list, output_path: str, file_name: str) -> None:
         lat = current_lat + random.uniform(-0.01, 0.01)
         lng = current_lng + random.uniform(-0.01, 0.01)
         content.append('AddPathPoint(path, {}, {})\n'.format(lat, lng))
-        content.append('AddPoint(map, "{}", "{}", {}, {})\n'.format(current_name, text, lat, lng))
+        content.append('AddPoint(map, {}, {}, {}, {})\n'.format(
+            json.dumps(html.escape(current_name), ensure_ascii=False),
+            json.dumps(text, ensure_ascii=False),
+            lat,
+            lng,
+        ))
         textList = []
         current_lat = None
         current_lng = None
@@ -227,53 +243,65 @@ def process(rawData: dict, filename=str(int(datetime.datetime.now().timestamp())
     # print(rawData)
     coordinatesList = []
     hopsList = rawData.get('Hops', [])
-    last_success = None
+    last_success_group = None
     for group_index, hop_group in enumerate(hopsList):
         if not hop_group:
             continue
-        for probe_index, probe in enumerate(hop_group):
+        for probe in hop_group:
             if probe and isinstance(probe, dict) and probe.get('Success'):
-                last_success = (group_index, probe_index)
+                last_success_group = group_index
                 break
     for group_index, hop_group in enumerate(hopsList):
         if not hop_group:
             continue
-        for probe_index, j in enumerate(hop_group):
+        is_terminal_group = last_success_group == group_index
+        selected_probe = None
+        terminal_fallback = None
+        for j in hop_group:
             if not j or not isinstance(j, dict):
                 continue
-            if j.get('Success'):
-                geo = j.get('Geo') or {}
-                if 'lat' not in geo:
-                    return "不受支持的版本，请更新至最新版本NextTrace。"
-                is_terminal_success = last_success == (group_index, probe_index)
-                has_drawable_geo = not (geo.get('lat') == 0 and geo.get('lng') == 0)
-                if not has_drawable_geo and not is_terminal_success:
-                    continue
-                if geo.get('prov') == "" and geo.get('country') in ['中国', '美国', '俄罗斯'] and not is_terminal_success:
-                    continue
-                tmpCity = ''
-                if geo.get('country'):
-                    tmpCity = geo['country']
-                if geo.get('prov'):
-                    tmpCity = geo['prov']
-                if geo.get('city'):
-                    tmpCity = geo['city']
-                address = j.get('Address') or {}
-                coordinatesList.append(
-                    [
-                        geo.get('lat') if has_drawable_geo else None,
-                        geo.get('lng') if has_drawable_geo else None,
-                        tmpCity,
-                        geo.get('owner', ''),
-                        geo['asnumber'] if 'asnumber' in geo else '',
-                        address['IP'] if 'IP' in address else '',
-                        j['whois'] if 'whois' in j else '',
-                        f'{j["TTL"]}' if 'TTL' in j else '',
-                        f'{(j["RTT"] / 1_000_000):.2f}' if 'RTT' in j else '',  # unit: ms
-                        j['Hostname'] if 'Hostname' in j else ''
-                    ]
-                )
+            if not j.get('Success'):
+                continue
+            geo = j.get('Geo') or {}
+            if 'lat' not in geo:
+                return "不受支持的版本，请更新至最新版本NextTrace。"
+            has_drawable_geo = _is_drawable_lat_lng(geo.get('lat'), geo.get('lng'))
+            should_skip_region = geo.get('prov') == "" and geo.get('country') in ['中国', '美国', '俄罗斯']
+            if has_drawable_geo and (is_terminal_group or not should_skip_region):
+                selected_probe = j
                 break
+            if is_terminal_group and terminal_fallback is None:
+                terminal_fallback = j
+        if selected_probe is None and is_terminal_group:
+            selected_probe = terminal_fallback
+        if selected_probe is None:
+            continue
+
+        j = selected_probe
+        geo = j.get('Geo') or {}
+        has_drawable_geo = _is_drawable_lat_lng(geo.get('lat'), geo.get('lng'))
+        tmpCity = ''
+        if geo.get('country'):
+            tmpCity = geo['country']
+        if geo.get('prov'):
+            tmpCity = geo['prov']
+        if geo.get('city'):
+            tmpCity = geo['city']
+        address = j.get('Address') or {}
+        coordinatesList.append(
+            [
+                geo.get('lat') if has_drawable_geo else None,
+                geo.get('lng') if has_drawable_geo else None,
+                tmpCity,
+                geo.get('owner', ''),
+                geo['asnumber'] if 'asnumber' in geo else '',
+                address['IP'] if 'IP' in address else '',
+                j['whois'] if 'whois' in j else '',
+                f'{j["TTL"]}' if 'TTL' in j else '',
+                f'{(j["RTT"] / 1_000_000):.2f}' if 'RTT' in j else '',  # unit: ms
+                j['Hostname'] if 'Hostname' in j else ''
+            ]
+        )
     if (len(coordinatesList) == 0):
         return "没有需要绘制的数据。"
     draw(coordinatesList, './html', filename)
